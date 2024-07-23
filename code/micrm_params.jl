@@ -19,10 +19,10 @@ end
 
 function generate_params(N, M; f_m=def_m, f_ρ=def_ρ, f_ω=def_ω, f_u=def_u, f_l=def_l, kwargs...)
     kw = Dict{Symbol, Any}(kwargs) # for temp, include: T, ρ_t, Tr, Ed, L
-    if haskey(kw, :T)
-        tt = temp_trait(N, kw)
-        push!(kw, :tt => tt)
-    end 
+
+    tt, E, Tp = temp_trait(N, kw)
+    push!(kw, :tt => tt)
+
     # consumers
      λ = zeros(N, M)
      m = f_m(N, M, kw)
@@ -42,13 +42,12 @@ function generate_params(N, M; f_m=def_m, f_ρ=def_ρ, f_ω=def_ω, f_u=def_u, f
         end
     end
 
-    # Eϵ = temp_trait(N, kw)[2]
      # resources
      ρ = f_ρ(N, M, kw)
      ω = f_ω(N, M, kw)
 
      kw_nt = (; kwargs...)
-     p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, λ=λ, L = L)#, Eϵ)
+     p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, λ=λ, L = L, E, Tp)
     #  p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, λ=λ)
 
      out = Base.merge(p_nt, kw_nt)

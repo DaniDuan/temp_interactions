@@ -10,6 +10,7 @@ using Parameters
 using CSV, DataFrames
 using CairoMakie
 using LsqFit 
+using Logging
 
 # Include simulation code files
 include("micrm_params.jl") # Contains function gereate_params with default sampling scheme
@@ -21,6 +22,8 @@ include("LV_dx.jl") # Defines LV differential equatons, use LV_dx
 include("temp.jl")
 
 include("EFF_LV_p_opt.jl")
+
+include("Jacobian.jl")
 
 ####################################################################################################################################################################################
 function F_m(N, M, kw)
@@ -52,3 +55,11 @@ function F_u(N, M, kw)
     u = diri.*u_sum
     return u
 end
+
+function cosine_similarity(vec1, vec2)
+    dot_product = dot(vec1, vec2)
+    norm1 = norm(vec1)
+    norm2 = norm(vec2)
+    return dot_product / (norm1 * norm2)
+end
+

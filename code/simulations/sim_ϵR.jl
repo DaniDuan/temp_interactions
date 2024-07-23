@@ -5,7 +5,7 @@ N=100
 M=50
 l_α = 0.3
 ### Temp params 
-ρ_t= [-0.3500, -0.3500]; # realistic covariance
+ρ_t= [-0.3500 -0.3500]; # realistic covariance
 Tr=273.15+9; Ed=3.5 
 ###################################
 # Generate MiCRM parameters

@@ -48,7 +48,7 @@ end
 f
 
 ############### Plotting u+m and CUE #############
-ρ_t=[-0.3500 -0.3500]
+ρ_t=-0.3500
 num_temps = 31
 Temp_rich = range(0, num_temps-1, length = num_temps)
 T = Temp_rich .+ 273.15
@@ -119,7 +119,7 @@ end
 
 
 
-ρ_t= [-0.3500, -0.3500] #[-0.1384 -0.1384]
+ρ_t= [-0.3500 -0.3500] #[-0.1384 -0.1384]
 num_temps = 31
 Temp_rich = range(0, num_temps-1, length = num_temps)
 T = Temp_rich .+ 273.15

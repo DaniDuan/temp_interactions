@@ -63,3 +63,10 @@ function cosine_similarity(vec1, vec2)
     return dot_product / (norm1 * norm2)
 end
 
+function bray_curtis_dissimilarity(A, B)
+    return sum(abs.(A .- B)) / sum(A .+ B)
+end
+
+function euclidean_distance(A, B)
+    return sqrt(sum((A .- B) .^ 2))
+end

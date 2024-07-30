@@ -37,3 +37,39 @@ diag(LV_Jac) - Jac_off
 sum(diag(LV_Jac))
 sum(eigen(LV_Jac).values)
 sum(diag(LV_Jac) - Jac_off .> 0)
+
+
+
+bm = sol.u[length(sol.t)][1:p_lv.N]
+sur = (1:p_lv.N)[bm .> 1.0e-7]
+N_s = length(sur)
+
+u_sur = p.u[sur,:]
+R_t = sol.u[length(sol.t)][N+1:N+M]
+C_t = sol.u[length(sol.t)][1:N][sur]
+u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
+u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
+
+R_over = 1 .-[bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
+R_over_matrix = reshape(1 .-[bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s], N_s, N_s)
+
+l_t = p.l[sur,:,:]
+ul = zeros(Float64, N_s, M)
+for s in 1: N_s
+    uli = zeros(Float64, M, M)
+    for α in 1:M
+        uli[α,:] = u_t[s, α] .* l_t[s, α, :]
+    end 
+    ul[s,:] = sum(uli, dims = 1)
+end 
+ul_over = 1 .- [bray_curtis_dissimilarity(ul[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
+ul_over_matrix = transpose(reshape(1 .-[bray_curtis_dissimilarity(ul[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s], N_s, N_s))
+
+est = ul_over - R_over
+Plots.histogram(ul_over./R_over)
+Plots.histogram(R_over)
+Plots.histogram(ul_over)
+Plots.histogram(ul_over./R_over)
+# sur_ℵ = reshape(sur_ℵ, N_sur*N_sur, 1)
+# Plots.scatter(est_ℵ, sur_ℵ)
+Plots.histogram(est)

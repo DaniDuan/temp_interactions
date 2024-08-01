@@ -14,7 +14,7 @@ condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
 affect!(integrator) = terminate!(integrator)
 cb = DiscreteCallback(condition, affect!)
 
-T = 273.15 + 15
+T = 273.15 + 25
 p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
 prob = ODEProblem(dxx!, x0, tspan, p)
 sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
@@ -31,15 +31,21 @@ LV_Jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
 bm = sol.u[length(sol.t)][1:p_lv.N]
 sur = (1:p_lv.N)[bm .> 1.0e-7]
 
-Jac_off = [sum(LV_Jac[j,i] for j in 1:N if j != i) for i in 1:N ]
+Jac_off = [sum(abs.(LV_Jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
 diag(LV_Jac) - Jac_off
 
 sum(diag(LV_Jac))
 sum(eigen(LV_Jac).values)
 sum(diag(LV_Jac) - Jac_off .> 0)
 
+sum(eigen(LV_Jac).values .> 0)
+Jsym = 1/2 *(LV_Jac + LV_Jac')
+sum(eigen(Jsym).values .> 0)
+Jskew = 1/2 *(LV_Jac - LV_Jac')
+sum(real(eigen(Jskew).values) .< 1.0e-7)
+println(imag(eigen(Jskew).values))
 
-
+eigen(Jsym).vectors[100,:]
 bm = sol.u[length(sol.t)][1:p_lv.N]
 sur = (1:p_lv.N)[bm .> 1.0e-7]
 N_s = length(sur)
@@ -73,3 +79,8 @@ Plots.histogram(ul_over./R_over)
 # sur_ℵ = reshape(sur_ℵ, N_sur*N_sur, 1)
 # Plots.scatter(est_ℵ, sur_ℵ)
 Plots.histogram(est)
+
+
+
+N = 5
+M = 7

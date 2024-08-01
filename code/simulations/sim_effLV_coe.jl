@@ -60,12 +60,12 @@ Eff_results = zeros(Float64, num_temps, 45)
         jac_eigen = eigen(LV_jac).values
         leading = maximum(real.(jac_eigen))
         jac_diag = diag(LV_jac)
-        jac_off = [sum(LV_jac[j, i] for j in 1:N if j != i) for i in 1:N ]
+        jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
         diag_dom = sum(abs.(jac_diag) - abs.(jac_off) .> 0)/N
         if N_sur > 1
             u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
             u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
-            R_over = 1 .-[bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
+            R_over = 1 .- [bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
             l_t = p.l[sur,:,:]
             ul = zeros(Float64, N_s, M)
             for s in 1: N_s
@@ -126,7 +126,10 @@ Eff_results = DataFrame(Eff_results, col_names_EF);
 # Eff_results = CSV.read("../data/Eff_results.csv", DataFrame, header=false)
 # rename!(Eff_results, col_names_EF)
 
+### Plots setting ###
 Temp_rich = range(0, num_temps-1, length = num_temps)
+CairoMakie.activate!(type = "png")
+
 f = Figure(fontsize = 35, resolution = (1200, 900));
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
 ax2 = Axis(f[1,1], ylabel = "αij", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), xticklabelsvisible = false, xlabelvisible = false)
@@ -142,23 +145,43 @@ Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["αii", "αij"]
 f
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "CUE", xlabelsize = 50, ylabelsize = 50)
-lines!(ax, Temp_rich, Eff_results.ulO, color = ("#EF8F8C",1), linewidth = 5, label = "Survivor")
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Overlap", xlabelsize = 50, ylabelsize = 50)
+lines!(ax, Temp_rich, Eff_results.ulO, color = ("#EF8F8C",1), linewidth = 5, label = "Cross-feeding")
 band!(ax, Temp_rich, Eff_results.ulO .- Eff_results.ulO_err , Eff_results.ulO .+ Eff_results.ulO_err , color = ("#EF8F8C", 0.2))
-lines!(ax, Temp_rich, Eff_results.RO, color = ("#4F363E", 0.6), linewidth = 5, label = "Extinct")
+lines!(ax, Temp_rich, Eff_results.RO, color = ("#4F363E", 0.6), linewidth = 5, label = "Resource Overlap")
 band!(ax, Temp_rich,  Eff_results.RO .- Eff_results.RO_err, Eff_results.RO .+ Eff_results.RO_err, color = ("#4F363E", 0.2))
+axislegend(position = :rb)
+f
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Interaction Strength", xlabelsize = 50, ylabelsize = 50)
+lines!(ax, Temp_rich, Eff_results.estα, color = ("#EF8F8C",1), linewidth = 5, label = "")
+band!(ax, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#EF8F8C", 0.2))
 axislegend(position = :rb)
 f
 
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = " ", xlabelsize = 50, ylabelsize = 50)
-lines!(ax, Temp_rich, Eff_results.Eu_sur, color = ("#EF8F8C",1), linewidth = 5, label = "")
-band!(ax, Temp_rich, Eff_results.Eu_sur .- Eff_results.Eu_sur_err , Eff_results.Eu_sur .+ Eff_results.Eu_sur_err , color = ("#EF8F8C", 0.2))
-lines!(ax, Temp_rich, Eff_results.α, color = ("#4F363E", 0.6), linewidth = 5, label = " ")
-band!(ax, Temp_rich,  Eff_results.α .- Eff_results.α_err, Eff_results.α .+ Eff_results.α_err, color = ("#4F363E", 0.2))
-# axislegend(position = :rb)
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Center", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
+ax2 = Axis(f[1,1], ylabel = "Radius", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), xticklabelsvisible = false, xlabelvisible = false)
+lines!(ax1, Temp_rich, Eff_results.Jac_diag, color = ("#FA8328",1), linewidth = 5, label = "Diagonal")
+band!(ax1, Temp_rich, Eff_results.Jac_diag .- Eff_results.Jac_diag_err , Eff_results.Jac_diag .+ Eff_results.Jac_diag_err , color = ("#FA8328", 0.2))
+lines!(ax2, Temp_rich, Eff_results.radius, color = ("#015845", 0.6), linewidth = 5, label = "Radius")
+band!(ax2, Temp_rich,  Eff_results.radius .- Eff_results.radius_err, Eff_results.radius .+ Eff_results.radius_err, color = ("#015845", 0.2))
+linkxaxes!(ax1,ax2)
+l1 = [LineElement(color = ("#FA8328",0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#015845", 0.8), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["Center", "Radius"], halign = :left, valign = :center)
 f
+save("../results/Jacobian.png", f) 
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Ratio", xlabelsize = 50, ylabelsize = 50)
+lines!(ax, Temp_rich, Eff_results.diag_dom, color = ("#EF8F8C",1), linewidth = 5, label = "Diagonal Dominance")
+band!(ax, Temp_rich, Eff_results.diag_dom .- Eff_results.diag_dom_err , Eff_results.diag_dom .+ Eff_results.diag_dom_err , color = ("#EF8F8C", 0.2))
+axislegend(position = :rb)
+f
+save("../results/Jacobian_DD.png", f) 
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 f = Figure(fontsize = 35, resolution = (1200, 900));
@@ -168,9 +191,8 @@ lines!(ax1, Temp_rich, Eff_results.u, color = ("#FA8328",0.8), linewidth = 5, la
 band!(ax1, Temp_rich, Eff_results.u .- Eff_results.u_err, Eff_results.u .+ Eff_results.u_err, color = ("#FA8328", 0.2))
 lines!(ax1, Temp_rich, Eff_results.m, color = ("#015845",0.8), linewidth = 5, label = " ")
 band!(ax1, Temp_rich, Eff_results.m .- Eff_results.m_err, Eff_results.m .+ Eff_results.m_err, color = ("#015845", 0.2))
-
-lines!(ax2, Temp_rich, Eff_results.αij, color = ("#EF8F8C", 0.8), linewidth = 5, label = " ")
-band!(ax2, Temp_rich,  Eff_results.αij .- Eff_results.αij_err, Eff_results.αij .+ Eff_results.αij_err, color = ("#EF8F8C", 0.2))
+lines!(ax2, Temp_rich, Eff_results.α, color = ("#EF8F8C", 0.8), linewidth = 5, label = " ")
+band!(ax2, Temp_rich,  Eff_results.α .- Eff_results.α_err, Eff_results.α .+ Eff_results.α_err, color = ("#EF8F8C", 0.2))
 linkxaxes!(ax1,ax2)
 # l1 = [LineElement(color = ("#FA8328",0.8), linestyle = nothing, linewidth = 5)]
 # l2 = [LineElement(color = ("#015845", 0.8), linestyle = nothing, linewidth = 5)]

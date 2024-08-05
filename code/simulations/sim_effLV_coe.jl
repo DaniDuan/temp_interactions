@@ -17,11 +17,13 @@ affect!(integrator) = terminate!(integrator)
 cb = DiscreteCallback(condition, affect!)
 iter = 50
 
+# ρ_t= [-0.9999 -0.9999]; # testing covariance
+
 Eff_results = zeros(Float64, num_temps, 45)
-@time for i in range(0, stop = 30, length = 31)
+@time for i in range(26, stop = 30, length = 5)
     T = 273.15 + i
     all_ℵ = Float64[]; all_ℵii = Float64[]; allsur_ℵij = Union{Float64, Missing}[]; all_r = Float64[]; 
-    all_leading = Float64[]; stability = Float64[]; all_diag = Float64[];radi = Float64[]; diag_dominance = Float64[];
+    all_leading = Float64[]; all_diag = Float64[];radi = Float64[]; diag_dominance = Float64[];
     all_u = Float64[]; all_m = Float64[]; RO = Union{Float64, Missing}[]; ulO = Union{Float64, Missing}[]; Rul = Union{Float64, Missing}[]; all_UDLD = Union{Float64, Missing}[];
     all_Eu = Float64[]; all_Em = Float64[]; all_Eu_sur = Float64[]; all_Em_sur = Float64[];
     all_Tpu = Float64[]; all_Tpm = Float64[]; all_Tpu_sur = Float64[]; all_Tpm_sur = Float64[]

@@ -11,6 +11,7 @@ using CSV, DataFrames
 using CairoMakie
 using LsqFit 
 using Logging
+using JLD2
 
 # Include simulation code files
 include("micrm_params.jl") # Contains function gereate_params with default sampling scheme

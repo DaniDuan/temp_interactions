@@ -81,6 +81,29 @@ Plots.histogram(ul_over./R_over)
 Plots.histogram(est)
 
 
+#alpha diversity - Shannon
+N=100
+M=50
+L = 0.3
+### Temp params 
+# T=15+273.15; 
+ρ_t= [-0.3500 -0.3500]; # realistic covariance
+Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
 
-N = 5
-M = 7
+tspan = (0.0, 1.5e8)
+x0 = vcat(fill(0.1, N), fill(1, M))
+# here we define a callback that terminates integration as soon as system reaches steady state
+condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
+affect!(integrator) = terminate!(integrator)
+cb = DiscreteCallback(condition, affect!)
+
+T = 273.15 + 25
+p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
+prob = ODEProblem(dxx!, x0, tspan, p)
+sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+bm = sol.u[length(sol.t)][1:N]
+sur = (1:p_lv.N)[bm .> 1.0e-7]
+
+p = bm[sur]./sum(bm[sur])
+Shannon = - sum(p .* log.(p))
+Simpson = 1/ sum(p .^2)

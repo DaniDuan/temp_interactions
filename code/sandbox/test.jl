@@ -107,3 +107,51 @@ sur = (1:p_lv.N)[bm .> 1.0e-7]
 p = bm[sur]./sum(bm[sur])
 Shannon = - sum(p .* log.(p))
 Simpson = 1/ sum(p .^2)
+
+
+#### Script for secondary derivative
+using Dierckx
+
+x = x_t
+y = log.(abs.(Eff_results.sum_αij))
+spl = Spline1D(x, y, k=3)  # k=3 spline interpolation
+
+d2 = [derivative(spl, xi, 2) for xi in x]
+plot(d2)
+
+data_ii = DataFrame(y = log.(abs.(Eff_results.αii)), x = x);
+B, E= coef(lm(@formula(y ~ x), data_ii))
+B = exp(B)
+yii = log.(B * exp.(E .* x_t))
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 50, ylabelsize = 50)
+lines!(ax, x, yii, color = ("#285C93",1), linewidth = 5, label = "")
+lines!(ax, x, y, color = ("#E17542",1), linewidth = 5, label = "")
+# axislegend(position = :rb)
+f
+
+######### Script for finding arrhenius stopping point
+# Temp_rich
+all_yij = [mean(αij[i]) for i in 1:num_temps]
+dataii = DataFrame(y = log.(abs.(all_yij)), x = x_t);
+fit1 = lm(@formula(y ~ x), dataii)
+
+X = hcat(ones(num_temps), x_t, x_t.^2)
+fit2 = lm(X, log.(abs.(all_yij)))
+
+for i in 1: num_temps
+    all_yij = [mean(αij[i]) for i in 1:num_temps]
+    t_points = 1: num_temps-i
+    dataii = DataFrame(y = log.(abs.(all_yij))[t_points], x = x_t[t_points]);
+    fit1 = lm(@formula(y ~ x), dataii)
+    X = hcat(ones(length(t_points)), x_t[t_points], x_t[t_points].^2)
+    fit2 = lm(X, log.(abs.(all_yij[t_points])))
+    if AIC(fit2, length(t_points)) <= AIC(fit1, length(t_points))
+        print(i)
+        break 
+    end 
+end 
+
+plot(Temp_rich, log.(abs.(all_yij)))
+

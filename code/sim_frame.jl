@@ -1,7 +1,7 @@
 # cd("WORKING_DIRECTORY")
 
 # Load libraries
-using Distributions
+using Distributions, Random
 using LinearAlgebra
 using DifferentialEquations
 # using Plots, StatsPlots
@@ -70,4 +70,11 @@ end
 
 function euclidean_distance(A, B)
     return sqrt(sum((A .- B) .^ 2))
+end
+
+function AIC(model, n)
+    RSS = sum(residuals(model).^2)
+    k = length(coef(model))
+    aic_value = n * log(RSS / n) + 2 * k
+    return aic_value
 end

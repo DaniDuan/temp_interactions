@@ -13,6 +13,7 @@ function Eff_Lv_Jac(; p_lv, sol)
     ℵ = p_lv.ℵ
     r = p_lv.r
     C = sol[1:N, length(sol)]
+    # @. C = ifelse(C < 1.0e-7, 0, C)
     # Calculating Jacobian matrix
     LV_Jac = [ℵ[i, j]*C[i] for i in 1:N, j in 1:N]
     # reset diagonal

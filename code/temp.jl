@@ -8,7 +8,7 @@ function temp_trait(N, kw)
     B,E,Tp = randtemp_param(N, kw)
     temp_p = B .* exp.((-E./k) * ((1/T)-(1/Tr)))./(1 .+ (E./(Ed .- E)) .* exp.(Ed/k * (1 ./Tp .- 1/T)))
     # Eϵ = (B[:,2] .* (E[:,1] .- E[:,2]))./(B[:,1]*(1-L)-B[:,2])  #m0(Eu − Em)/(u0(1 − l) − m0)
-    return temp_p, E, Tp
+    return temp_p, B, E, Tp
 end
 
 function randtemp_param(N, kw)

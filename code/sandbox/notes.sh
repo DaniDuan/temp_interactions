@@ -37,7 +37,7 @@ index = parse(Int, index_str)
 sbatch temp_div.sh
 
 # scancel is used to cancel a pending or running job or job step. It can also be used to send an arbitrary signal to all processes associated with a running job or job step.
-scancel
+scancel # job number
 
 # checking in the queue
 # squeue reports the state of jobs or job steps. It has a wide variety of filtering, sorting, and formatting options. By default, it reports the running jobs in priority order and then the pending jobs in priority order.

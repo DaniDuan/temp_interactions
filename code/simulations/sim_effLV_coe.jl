@@ -1,189 +1,238 @@
 include("./sim_frame.jl");
 
-N=100
-M=50
-L = 0.3
-### Temp params 
-num_temps = 31
-ρ_t= [-0.3500 -0.3500]; # realistic covariance
-Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
-###################################
-# Generate MiCRM parameters
-tspan = (0.0, 1.5e8)
-x0 = vcat(fill(0.1, N), fill(1, M))
-# here we define a callback that terminates integration as soon as system reaches steady state
-condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
-affect!(integrator) = terminate!(integrator)
-cb = DiscreteCallback(condition, affect!)
-iter = 50
+# N=100
+# M=50
+# L = 0.3
+# ### Temp params 
+# num_temps = 31
+# ρ_t= [-0.3500 -0.3500]; # realistic covariance
+# Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
+# ###################################
+# # Generate MiCRM parameters
+# tspan = (0.0, 1.5e8)
+# x0 = vcat(fill(0.1, N), fill(1, M))
+# # here we define a callback that terminates integration as soon as system reaches steady state
+# condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
+# affect!(integrator) = terminate!(integrator)
+# cb = DiscreteCallback(condition, affect!)
+# iter = 50
 
-# ρ_t= [-0.9999 -0.9999]; # testing covariance
+# # ρ_t= [-0.9999 -0.9999]; # testing covariance
 
-Eff_results = zeros(Float64, num_temps, 45)
-@time for i in range(26, stop = 30, length = 5)
-    T = 273.15 + i
-    all_ℵ = Float64[]; all_ℵii = Float64[]; allsur_ℵij = Union{Float64, Missing}[]; all_r = Float64[]; 
-    all_leading = Float64[]; all_diag = Float64[];radi = Float64[]; diag_dominance = Float64[];
-    all_u = Float64[]; all_m = Float64[]; RO = Union{Float64, Missing}[]; ulO = Union{Float64, Missing}[]; Rul = Union{Float64, Missing}[]; all_UDLD = Union{Float64, Missing}[];
-    all_Eu = Float64[]; all_Em = Float64[]; all_Eu_sur = Float64[]; all_Em_sur = Float64[];
-    all_Tpu = Float64[]; all_Tpm = Float64[]; all_Tpu_sur = Float64[]; all_Tpm_sur = Float64[]
-    for j in 1:iter 
-        p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
-        ## run simulation
-        prob = ODEProblem(dxx!, x0, tspan, p)
-        sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
-        bm = sol.u[length(sol.t)][1:N]
-        sur = (1:N)[bm .> 1.0e-7]
-        N_s = length(sur)
-        R_t = sol.u[length(sol.t)][N+1:N+M]
-        C_t = sol.u[length(sol.t)][1:N][sur]
-        ## getting effective LV coefficients
-        p_lv = Eff_LV_params(p=p, sol=sol);
-        # number of species with r>0 at equilibium 
-        N_sur = sum(p_lv.r .> 0)
-        sur_r = p_lv.r[p_lv.r.>0]
-        # mean uptake and respiration 
-        m = p.m[p_lv.r.>0]
-        u = sum(p.u, dims =2)[p_lv.r.>0]
-        # mean E Tp for u and m 
-        Eu, Em = p.E[p_lv.r.>0, :]
-        Eu_sur, Em_sur = p.E[sur,:]
-        Tpu, Tpm = p.Tp[p_lv.r.>0, :]
-        Tpu_sur, Tpm_sur = p.Tp[sur,:]
-        # Resource uptake of survivors 
-        u_sur = p.u[sur,:]
+# Eff_results = zeros(Float64, num_temps, 45)
+# @time for i in range(26, stop = 30, length = 5)
+#     T = 273.15 + i
+#     all_ℵ = Float64[]; all_ℵii = Float64[]; allsur_ℵij = Union{Float64, Missing}[]; all_r = Float64[]; 
+#     all_leading = Float64[]; all_diag = Float64[];radi = Float64[]; diag_dominance = Float64[];
+#     all_u = Float64[]; all_m = Float64[]; RO = Union{Float64, Missing}[]; ulO = Union{Float64, Missing}[]; Rul = Union{Float64, Missing}[]; all_UDLD = Union{Float64, Missing}[];
+#     all_Eu = Float64[]; all_Em = Float64[]; all_Eu_sur = Float64[]; all_Em_sur = Float64[];
+#     all_Tpu = Float64[]; all_Tpm = Float64[]; all_Tpu_sur = Float64[]; all_Tpm_sur = Float64[]
+#     for j in 1:iter 
+#         p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
+#         ## run simulation
+#         prob = ODEProblem(dxx!, x0, tspan, p)
+#         sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+#         bm = sol.u[length(sol.t)][1:N]
+#         sur = (1:N)[bm .> 1.0e-7]
+#         N_s = length(sur)
+#         R_t = sol.u[length(sol.t)][N+1:N+M]
+#         C_t = sol.u[length(sol.t)][1:N][sur]
+#         ## getting effective LV coefficients
+#         p_lv = Eff_LV_params(p=p, sol=sol);
+#         # number of species with r>0 at equilibium 
+#         N_sur = sum(p_lv.r .> 0)
+#         sur_r = p_lv.r[p_lv.r.>0]
+#         # mean uptake and respiration 
+#         m = p.m[p_lv.r.>0]
+#         u = sum(p.u, dims =2)[p_lv.r.>0]
+#         # mean E Tp for u and m 
+#         Eu, Em = p.E[p_lv.r.>0, :]
+#         Eu_sur, Em_sur = p.E[sur,:]
+#         Tpu, Tpm = p.Tp[p_lv.r.>0, :]
+#         Tpu_sur, Tpm_sur = p.Tp[sur,:]
+#         # Resource uptake of survivors 
+#         u_sur = p.u[sur,:]
 
-        # survivor interaction coefficients
-        # ℵ = p_lv.ℵ # interactions
-        sur_ℵ = p_lv.ℵ[p_lv.r.>0, p_lv.r.>0] # interactions in the possibily surviving community
-        ℵii = diag(sur_ℵ)
-        # eigenvalue for jacobian 
-        LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
-        jac_eigen = eigen(LV_jac).values
-        leading = maximum(real.(jac_eigen))
-        jac_diag = diag(LV_jac)
-        jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
-        diag_dom = sum(abs.(jac_diag) - abs.(jac_off) .> 0)/N
-        if N_sur > 1
-            u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
-            u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
-            R_over = 1 .- [bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
-            l_t = p.l[sur,:,:]
-            ul = zeros(Float64, N_s, M)
-            for s in 1: N_s
-                    uli = zeros(Float64, M, M)
-                    for α in 1:M
-                    uli[α,:] = u_t[s, α] .* l_t[s, α, :]
-                    end 
-                    ul[s,:] = sum(uli, dims = 1)
-            end 
-            ul_over = 1 .- [bray_curtis_dissimilarity(ul[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
-            Rul_over = ul_over - R_over
-            ℵij = [sur_ℵ[i, j]/diag(sur_ℵ)[i] for i in 1:N_sur for j in 1:N_sur if i != j]
-            UDLD = [sur_ℵ[i, j]/sur_ℵ[j, i] for i in 1:N_sur for j in 1:N_sur if j != i]
-            append!(all_ℵ, sur_ℵ); append!(all_ℵii, ℵii); append!(allsur_ℵij, ℵij); append!(all_r, sur_r);
-            append!(all_u, u); append!(all_m, m); append!(RO, R_over); append!(ulO, ul_over); append!(Rul, Rul_over); append!(all_UDLD, UDLD);
-            append!(all_Eu, Eu); append!(all_Em, Em); append!(all_Eu_sur, Eu_sur); append!(all_Em_sur, Em_sur);
-            append!(all_Tpu, Tpu); append!(all_Tpm, Tpm); append!(all_Tpu_sur, Tpu_sur); append!(all_Tpm_sur, Tpm_sur);
-            push!(all_leading, leading); append!(all_diag, jac_diag); append!(radi, jac_off); push!(diag_dominance, diag_dom)
-        else 
-            append!(all_ℵ, sur_ℵ); append!(all_ℵii, ℵii); push!(allsur_ℵij, missing); append!(all_r, sur_r);
-            append!(all_u, u); append!(all_m, m); push!(RO, missing); push!(ulO, missing); push!(Rul, missing); push!(all_UDLD, missing);
-            append!(all_Eu, Eu); append!(all_Em, Em); append!(all_Eu_sur, Eu_sur); append!(all_Em_sur, Em_sur);
-            append!(all_Tpu, Tpu); append!(all_Tpm, Tpm); append!(all_Tpu_sur, Tpu_sur); append!(all_Tpm_sur, Tpm_sur);
-            push!(all_leading, leading); append!(all_diag, jac_diag); append!(radi, jac_off); push!(diag_dominance, diag_dom)
-        end
-    end 
-    Eff_results[Int(i+1),:] = [mean(all_ℵ), std(all_ℵ)/sqrt(length(all_ℵ)), 
-        mean(all_ℵii), std(all_ℵii)/sqrt(length(all_ℵii)), mean(skipmissing(allsur_ℵij)), std(skipmissing(allsur_ℵij))/sqrt(length(allsur_ℵij)), 
-        mean(all_r), std(all_r)/sqrt(length(all_r)), mean(all_u), std(all_u)/sqrt(length(all_u)), 
-        mean(all_m), std(all_m)/sqrt(length(all_m)), 
-        mean(skipmissing(RO)), std(skipmissing(RO))/sqrt(length(RO)),
-        mean(skipmissing(ulO)), std(skipmissing(ulO))/sqrt(length(ulO)),
-        mean(skipmissing(Rul)), std(skipmissing(Rul))/sqrt(length(Rul)),
-        mean(skipmissing(all_UDLD)), std(skipmissing(all_UDLD))/sqrt(length(all_UDLD)),
-        mean(all_Eu), std(all_Eu)/sqrt(length(all_Eu)), mean(all_Em), std(all_Em)/sqrt(length(all_Em)),
-        mean(all_Eu_sur), std(all_Eu_sur)/sqrt(length(all_Eu_sur)), mean(all_Em_sur), std(all_Em_sur)/sqrt(length(all_Em_sur)),
-        mean(all_Tpu), std(all_Tpu)/sqrt(length(all_Tpu)), mean(all_Tpm), std(all_Tpm)/sqrt(length(all_Tpm)),
-        mean(all_Tpu_sur), std(all_Tpu_sur)/sqrt(length(all_Tpm_sur)), mean(all_Tpm_sur), std(all_Tpm_sur)/sqrt(length(all_Em_sur)),
-        mean(all_leading), std(all_leading)/sqrt(length(all_leading)), sum(all_leading .< 0)/iter, 
-        mean(diag_dominance), std(diag_dominance)/sqrt(length(diag_dominance)), 
-        mean(all_diag), std(all_diag)/sqrt(length(all_diag)), mean(radi), std(radi)/sqrt(length(radi))]
-    print(i, " °C Complete, ", "α ",mean(all_ℵ),"\n") 
-end
+#         # survivor interaction coefficients
+#         # ℵ = p_lv.ℵ # interactions
+#         sur_ℵ = p_lv.ℵ[p_lv.r.>0, p_lv.r.>0] # interactions in the possibily surviving community
+#         ℵii = diag(sur_ℵ)
+#         # eigenvalue for jacobian 
+#         LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
+#         jac_eigen = eigen(LV_jac).values
+#         leading = maximum(real.(jac_eigen))
+#         jac_diag = diag(LV_jac)
+#         jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
+#         diag_dom = sum(abs.(jac_diag) - abs.(jac_off) .> 0)/N
+#         if N_sur > 1
+#             u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
+#             u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
+#             R_over = 1 .- [bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
+#             l_t = p.l[sur,:,:]
+#             ul = zeros(Float64, N_s, M)
+#             for s in 1: N_s
+#                     uli = zeros(Float64, M, M)
+#                     for α in 1:M
+#                     uli[α,:] = u_t[s, α] .* l_t[s, α, :]
+#                     end 
+#                     ul[s,:] = sum(uli, dims = 1)
+#             end 
+#             ul_over = 1 .- [bray_curtis_dissimilarity(ul[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
+#             Rul_over = ul_over - R_over
+#             ℵij = [sur_ℵ[i, j]/diag(sur_ℵ)[i] for i in 1:N_sur for j in 1:N_sur if i != j]
+#             UDLD = [sur_ℵ[i, j]/sur_ℵ[j, i] for i in 1:N_sur for j in 1:N_sur if j != i]
+#             append!(all_ℵ, sur_ℵ); append!(all_ℵii, ℵii); append!(allsur_ℵij, ℵij); append!(all_r, sur_r);
+#             append!(all_u, u); append!(all_m, m); append!(RO, R_over); append!(ulO, ul_over); append!(Rul, Rul_over); append!(all_UDLD, UDLD);
+#             append!(all_Eu, Eu); append!(all_Em, Em); append!(all_Eu_sur, Eu_sur); append!(all_Em_sur, Em_sur);
+#             append!(all_Tpu, Tpu); append!(all_Tpm, Tpm); append!(all_Tpu_sur, Tpu_sur); append!(all_Tpm_sur, Tpm_sur);
+#             push!(all_leading, leading); append!(all_diag, jac_diag); append!(radi, jac_off); push!(diag_dominance, diag_dom)
+#         else 
+#             append!(all_ℵ, sur_ℵ); append!(all_ℵii, ℵii); push!(allsur_ℵij, missing); append!(all_r, sur_r);
+#             append!(all_u, u); append!(all_m, m); push!(RO, missing); push!(ulO, missing); push!(Rul, missing); push!(all_UDLD, missing);
+#             append!(all_Eu, Eu); append!(all_Em, Em); append!(all_Eu_sur, Eu_sur); append!(all_Em_sur, Em_sur);
+#             append!(all_Tpu, Tpu); append!(all_Tpm, Tpm); append!(all_Tpu_sur, Tpu_sur); append!(all_Tpm_sur, Tpm_sur);
+#             push!(all_leading, leading); append!(all_diag, jac_diag); append!(radi, jac_off); push!(diag_dominance, diag_dom)
+#         end
+#     end 
+#     Eff_results[Int(i+1),:] = [mean(all_ℵ), std(all_ℵ)/sqrt(length(all_ℵ)), 
+#         mean(all_ℵii), std(all_ℵii)/sqrt(length(all_ℵii)), mean(skipmissing(allsur_ℵij)), std(skipmissing(allsur_ℵij))/sqrt(length(allsur_ℵij)), 
+#         mean(all_r), std(all_r)/sqrt(length(all_r)), mean(all_u), std(all_u)/sqrt(length(all_u)), 
+#         mean(all_m), std(all_m)/sqrt(length(all_m)), 
+#         mean(skipmissing(RO)), std(skipmissing(RO))/sqrt(length(RO)),
+#         mean(skipmissing(ulO)), std(skipmissing(ulO))/sqrt(length(ulO)),
+#         mean(skipmissing(Rul)), std(skipmissing(Rul))/sqrt(length(Rul)),
+#         mean(skipmissing(all_UDLD)), std(skipmissing(all_UDLD))/sqrt(length(all_UDLD)),
+#         mean(all_Eu), std(all_Eu)/sqrt(length(all_Eu)), mean(all_Em), std(all_Em)/sqrt(length(all_Em)),
+#         mean(all_Eu_sur), std(all_Eu_sur)/sqrt(length(all_Eu_sur)), mean(all_Em_sur), std(all_Em_sur)/sqrt(length(all_Em_sur)),
+#         mean(all_Tpu), std(all_Tpu)/sqrt(length(all_Tpu)), mean(all_Tpm), std(all_Tpm)/sqrt(length(all_Tpm)),
+#         mean(all_Tpu_sur), std(all_Tpu_sur)/sqrt(length(all_Tpm_sur)), mean(all_Tpm_sur), std(all_Tpm_sur)/sqrt(length(all_Em_sur)),
+#         mean(all_leading), std(all_leading)/sqrt(length(all_leading)), sum(all_leading .< 0)/iter, 
+#         mean(diag_dominance), std(diag_dominance)/sqrt(length(diag_dominance)), 
+#         mean(all_diag), std(all_diag)/sqrt(length(all_diag)), mean(radi), std(radi)/sqrt(length(radi))]
+#     print(i, " °C Complete, ", "α ",mean(all_ℵ),"\n") 
+# end
 
-col_names_EF = ["α", "α_err", "αii", "αii_err", "αij", "αij_err", 
-                   "r", "r_err", "u", "u_err","m", "m_err", 
-                   "RO", "RO_err", "ulO", "ulO_err", "estα", "estα_err",
-                   "UDLD", "UDLD_err",
-                   "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
-                   "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err",
-                   "eigen", "eigen_err", "stability",
-                   "diag_dom", "diag_dom_err",
-                   "Jac_diag", "Jac_diag_err", "radius", "radius_err"];
-Eff_results = DataFrame(Eff_results, col_names_EF);
+# col_names_EF = ["α", "α_err", "αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err",
+#                    "r", "r_err", "u", "u_err","m", "m_err", 
+#                    "RO", "RO_err", "ulO", "ulO_err", "estα", "estα_err",
+#                    "UDLD", "UDLD_err",
+#                    "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
+#                    "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err",
+#                    "eigen", "eigen_err", "stability",
+#                    "diag_dom", "diag_dom_err",
+#                    "Jac_diag", "Jac_diag_err", "radius", "radius_err"];
+# Eff_results = DataFrame(Eff_results, col_names_EF);
 
-# CSV.write("../data/Eff_results.csv", Eff_results, writeheader=false)
+# # CSV.write("../data/Eff_results.csv", Eff_results, writeheader=false)
 
-# Eff_results = CSV.read("../data/Eff_results.csv", DataFrame, header=false)
-# rename!(Eff_results, col_names_EF)
+# # Eff_results = CSV.read("../data/Eff_results.csv", DataFrame, header=false)
+# # rename!(Eff_results, col_names_EF)
 
 ### Plots setting ###
 Temp_rich = range(0, num_temps-1, length = num_temps)
 CairoMakie.activate!(type = "png")
+# k = 0.0000862 # Boltzman constant
+# x = -1/k .* (1 ./(Temp_rich .+273.15) .- 1/Tr)
+# plot(x, log.(abs.(Eff_results.αii)))
+
+# data = DataFrame(y = log.(abs.(Eff_results.αii)), x = x);
+# Eα = coef(lm(@formula(y ~ x), data))[2]
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
-ax2 = Axis(f[1,1], ylabel = "αij", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), xticklabelsvisible = false, xlabelvisible = false)
-lines!(ax1, Temp_rich, Eff_results.αii, color = ("#FA8328",0.8), linewidth = 5, label = "MiCRM simulation")
-band!(ax1, Temp_rich, Eff_results.αii .- Eff_results.αii_err, Eff_results.αii .+ Eff_results.αii_err, color = ("#FA8328", 0.2))
-lines!(ax2, Temp_rich, Eff_results.αij, color = ("#015845", 0.8), linewidth = 5, label = "CUE Variance")
-band!(ax2, Temp_rich,  Eff_results.αij .- Eff_results.αij_err, Eff_results.αij .+ Eff_results.αij_err, color = ("#015845", 0.2))
-linkxaxes!(ax1,ax2)
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|α|)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+# ax2 = Axis(f[1,1], ylabel = "log(|αij/αii|)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+lines!(ax1, Temp_rich, abs.(Eff_results.αii), color = ("#FA8328",0.8), linewidth = 5, label = "αii")
+band!(ax1, Temp_rich, abs.(Eff_results.αii .- Eff_results.αii_err), abs.(Eff_results.αii .+ Eff_results.αii_err), color = ("#FA8328", 0.2))
+lines!(ax1, Temp_rich, abs.(Eff_results.αij), color = ("#015845", 0.8), linewidth = 5, label = "αij")
+band!(ax1, Temp_rich,  abs.(Eff_results.αij .- Eff_results.αij_err), abs.(Eff_results.αij .+ Eff_results.αij_err), color = ("#015845", 0.2))
+axislegend(position = :lt)
+f
+
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|α|)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+# ax2 = Axis(f[1,1], ylabel = "log(|αij/αii|)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+lines!(ax1, Temp_rich, log.(abs.(Eff_results.αii)), color = ("#FA8328",0.8), linewidth = 5, label = "αii")
+band!(ax1, Temp_rich, log.(abs.(Eff_results.αii .- Eff_results.αii_err)), log.(abs.(Eff_results.αii .+ Eff_results.αii_err)), color = ("#FA8328", 0.2))
+lines!(ax1, Temp_rich, log.(abs.(Eff_results.αij)), color = ("#015845", 0.8), linewidth = 5, label = "αij")
+band!(ax1, Temp_rich,  log.(abs.(Eff_results.αij .- Eff_results.αij_err)), log.(abs.(Eff_results.αij .+ Eff_results.αij_err)), color = ("#015845", 0.2))
+axislegend(position = :lt)
+f
+save("../results/a_-1.png", f) 
+
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αij/αii", xlabelsize = 50, ylabelsize = 50)
+lines!(ax, Temp_rich, log.(abs.(Eff_results.αij_d)), color = ("#285C93",1), linewidth = 5, label = "")
+band!(ax, Temp_rich, log.(abs.(Eff_results.αij_d .- Eff_results.αij_d_err)) , log.(abs.(Eff_results.αij_d .+ Eff_results.αij_d_err)) , color = ("#285C93", 0.2))
+# axislegend(position = :rb)
+f
+save("../results/aiiaij_-1.png", f) 
+
+f = Figure(fontsize = 35, resolution = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Overlap", xlabelsize = 50, ylabelsize = 50)
+ax2 = Axis(f[1,1], ylabel = "log(|α|)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+lines!(ax1, Temp_rich, Eff_results.ulO, color = ("#FA8328",1), linewidth = 5, label = "Cross-feeding")
+band!(ax1, Temp_rich, Eff_results.ulO .- Eff_results.ulO_err , Eff_results.ulO .+ Eff_results.ulO_err , color = ("#FA8328", 0.2))
+lines!(ax1, Temp_rich, Eff_results.RO, color = ("#015845", 0.6), linewidth = 5, label = "Resource Overlap")
+band!(ax1, Temp_rich,  Eff_results.RO .- Eff_results.RO_err, Eff_results.RO .+ Eff_results.RO_err, color = ("#015845", 0.2))
+lines!(ax2, Temp_rich, log.(abs.(Eff_results.αii)), color = ("#EF8F8C",0.8), linewidth = 5, label = "αii")
+band!(ax2, Temp_rich, log.(abs.(Eff_results.αii .- Eff_results.αii_err)), log.(abs.(Eff_results.αii .+ Eff_results.αii_err)), color = ("#FA8328", 0.2))
+lines!(ax2, Temp_rich, log.(abs.(Eff_results.αij)), color = ("#285C93", 0.8), linewidth = 5, label = "αij")
+band!(ax2, Temp_rich,  log.(abs.(Eff_results.αij .- Eff_results.αij_err)), log.(abs.(Eff_results.αij .+ Eff_results.αij_err)), color = ("#015845", 0.2))
 l1 = [LineElement(color = ("#FA8328",0.8), linestyle = nothing, linewidth = 5)]
 l2 = [LineElement(color = ("#015845", 0.8), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
-# Label(f[1,1, TopLeft()], "(a)")
+l3 = [LineElement(color = ("#EF8F8C", 0.8), linestyle = nothing, linewidth = 5)]
+l4 = [LineElement(color = ("#285C93", 0.8), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2, l3, l4], tellheight = false, tellwidth = false, ["Cross-feeding", "Resource Overlap", "αii" ,"αij"], halign = :left, valign = :top)
 f
+save("../results/CR_RO_-1-1.png", f) 
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Overlap", xlabelsize = 50, ylabelsize = 50)
-lines!(ax, Temp_rich, Eff_results.ulO, color = ("#EF8F8C",1), linewidth = 5, label = "Cross-feeding")
-band!(ax, Temp_rich, Eff_results.ulO .- Eff_results.ulO_err , Eff_results.ulO .+ Eff_results.ulO_err , color = ("#EF8F8C", 0.2))
-lines!(ax, Temp_rich, Eff_results.RO, color = ("#4F363E", 0.6), linewidth = 5, label = "Resource Overlap")
-band!(ax, Temp_rich,  Eff_results.RO .- Eff_results.RO_err, Eff_results.RO .+ Eff_results.RO_err, color = ("#4F363E", 0.2))
-axislegend(position = :rb)
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αij/αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "Pairwise Interaction", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+lines!(ax1, Temp_rich, Eff_results.αij_d, color = ("#285C93",1), linewidth = 5, label = "")
+band!(ax1, Temp_rich, Eff_results.αij_d .- Eff_results.αij_d_err , Eff_results.αij_d .+ Eff_results.αij_d_err, color = ("#285C93", 0.2))
+lines!(ax2, Temp_rich, Eff_results.estα, color = ("#E17542",1), linewidth = 5, label = "")
+band!(ax2, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#E17542", 0.2))
+l1 = [LineElement(color = ("#285C93",0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#E17542", 0.8), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "C-R"], halign = :left, valign = :top)
 f
+save("../results/CR_α0.png", f) 
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
 ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Interaction Strength", xlabelsize = 50, ylabelsize = 50)
 lines!(ax, Temp_rich, Eff_results.estα, color = ("#EF8F8C",1), linewidth = 5, label = "")
 band!(ax, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#EF8F8C", 0.2))
-axislegend(position = :rb)
+# axislegend(position = :rb)
 f
+# save("../results/IStrength_-1-1.png", f) 
 
+# f = Figure(fontsize = 35, resolution = (1200, 900));
+# ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Jacobian", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
+# ax2 = Axis(f[1,1], ylabel = "Stability", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), xticklabelsvisible = false, xlabelvisible = false)
+# lines!(ax1, Temp_rich, abs.(Eff_results.Jac_diag), color = ("#FA8328",1), linewidth = 5, label = "Diagonal")
+# band!(ax1, Temp_rich, abs.(Eff_results.Jac_diag .- Eff_results.Jac_diag_err),  abs.(Eff_results.Jac_diag .+ Eff_results.Jac_diag_err), color = ("#FA8328", 0.2))
+# lines!(ax1, Temp_rich, Eff_results.radius, color = ("#015845", 0.6), linewidth = 5, label = "Radius")
+# band!(ax1, Temp_rich,  Eff_results.radius .- Eff_results.radius_err, Eff_results.radius .+ Eff_results.radius_err, color = ("#015845", 0.2))
+# lines!(ax2, Temp_rich, Eff_results.stability, color = ("#285C93",1), linewidth = 5, label = "Stability")
+# # linkxaxes!(ax1,ax2)
+# l1 = [LineElement(color = ("#FA8328",0.8), linestyle = nothing, linewidth = 5)]
+# l2 = [LineElement(color = ("#015845", 0.8), linestyle = nothing, linewidth = 5)]
+# l3 = [LineElement(color = ("#285C93", 0.8), linestyle = nothing, linewidth = 5)]
+# Legend(f[1,1], [l1, l2, l3], tellheight = false, tellwidth = false, ["Center", "Radius", "Stability"], halign = :left, valign = :top)
+# f
+# # save("../results/Jacobian-1.png", f) 
 
-f = Figure(fontsize = 35, resolution = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Center", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
-ax2 = Axis(f[1,1], ylabel = "Radius", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), xticklabelsvisible = false, xlabelvisible = false)
-lines!(ax1, Temp_rich, Eff_results.Jac_diag, color = ("#FA8328",1), linewidth = 5, label = "Diagonal")
-band!(ax1, Temp_rich, Eff_results.Jac_diag .- Eff_results.Jac_diag_err , Eff_results.Jac_diag .+ Eff_results.Jac_diag_err , color = ("#FA8328", 0.2))
-lines!(ax2, Temp_rich, Eff_results.radius, color = ("#015845", 0.6), linewidth = 5, label = "Radius")
-band!(ax2, Temp_rich,  Eff_results.radius .- Eff_results.radius_err, Eff_results.radius .+ Eff_results.radius_err, color = ("#015845", 0.2))
-linkxaxes!(ax1,ax2)
-l1 = [LineElement(color = ("#FA8328",0.8), linestyle = nothing, linewidth = 5)]
-l2 = [LineElement(color = ("#015845", 0.8), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["Center", "Radius"], halign = :left, valign = :center)
-f
-save("../results/Jacobian.png", f) 
-
-f = Figure(fontsize = 35, resolution = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Ratio", xlabelsize = 50, ylabelsize = 50)
-lines!(ax, Temp_rich, Eff_results.diag_dom, color = ("#EF8F8C",1), linewidth = 5, label = "Diagonal Dominance")
-band!(ax, Temp_rich, Eff_results.diag_dom .- Eff_results.diag_dom_err , Eff_results.diag_dom .+ Eff_results.diag_dom_err , color = ("#EF8F8C", 0.2))
-axislegend(position = :rb)
-f
-save("../results/Jacobian_DD.png", f) 
+# f = Figure(fontsize = 35, resolution = (1200, 900));
+# ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Ratio", xlabelsize = 50, ylabelsize = 50)
+# lines!(ax1, Temp_rich, Eff_results.diag_dom, color = ("#FA8328",1), linewidth = 5, label = "Diagonal Dominance")
+# band!(ax1, Temp_rich, Eff_results.diag_dom .- Eff_results.diag_dom_err , Eff_results.diag_dom .+ Eff_results.diag_dom_err , color = ("#FA8328", 0.2))
+# lines!(ax1, Temp_rich, Eff_results.stability, color = ("#015845",1), linewidth = 5, label = "Stability")
+# axislegend(position = :rb)
+# f
+# # save("../results/Jac_DD_-1.png", f) 
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 f = Figure(fontsize = 35, resolution = (1200, 900));

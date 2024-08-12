@@ -1,11 +1,12 @@
 include("./sim_frame.jl");
+using ProgressMeter, RCall
 
 N=100
 M=50
 L = 0.3
 ### Temp params 
 num_temps = 38
-ρ_t= [0.0000 0.0000]; # realistic covariance
+ρ_t= [-0.9999 -0.9999]; # realistic covariance
 Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
 ###################################
 # Generate MiCRM parameters
@@ -17,7 +18,13 @@ affect!(integrator) = terminate!(integrator)
 cb = DiscreteCallback(condition, affect!)
 
 
-all_ℵii = Vector{Vector{Float64}}(); all_ℵij = Vector{Vector{Float64}}(); all_up_ℵij = Vector{Vector{Float64}}(); all_low_ℵij = Vector{Vector{Float64}}()
+all_ℵii = Vector{Vector{Float64}}(); all_ℵij = Vector{Vector{Float64}}(); 
+all_up_ℵij = Vector{Vector{Float64}}(); all_low_ℵij = Vector{Vector{Float64}}(); 
+all_ℵij_sum = Vector{Vector{Float64}}(); all_D_ℵij = Vector{Vector{Float64}}();
+all_ℵii_sur = Vector{Vector{Float64}}(); all_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); 
+all_up_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_low_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); 
+all_ℵij_sum_sur = Vector{Vector{Union{Float64, Missing}}}(); all_D_ℵij_sur =  Vector{Vector{Union{Float64, Missing}}}()
+progress = Progress(num_temps; desc="Progress running:")
 for i in range(0, stop = num_temps-1, length = num_temps)
     T = 273.15 + i
     Random.seed!(6)
@@ -31,105 +38,105 @@ for i in range(0, stop = num_temps-1, length = num_temps)
     N_s = length(sur)
     p_lv = Eff_LV_params(p=p, sol=sol);
     # number of species with r>0 at equilibium 
-    sur_ℵ = p_lv.ℵ
-    ℵii = diag(sur_ℵ)
-    # ℵij = vec(sum(reshape(sur_ℵ,Int(sqrt(length(sur_ℵ))),Int(sqrt(length(sur_ℵ)))), dims = 2).- diag(reshape(sur_ℵ,Int(sqrt(length(sur_ℵ))),Int(sqrt(length(sur_ℵ))))))
-    ℵ = reshape(sur_ℵ,Int(sqrt(length(sur_ℵ))),Int(sqrt(length(sur_ℵ))))
+    ℵ = p_lv.ℵ
+    ℵii = diag(ℵ)
+    ℵij_sum = vec(sum(ℵ, dims = 2).- diag(ℵ))
     ℵij = [ℵ[i,j] for i in 1:N for j in 1:N if i != j]
     up_ℵij = [ℵ[i,j] for i in 1:N for j in 1:N if i > j]
     low_ℵij = [ℵ[i,j] for i in 1:N for j in 1:N if i < j]
-    push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_up_ℵij, up_ℵij); push!(all_low_ℵij, low_ℵij)
-    print(i, " °C Complete, ", "α ",mean(ℵii),"\n") 
+    D_ℵij = up_ℵij./low_ℵij
 
+    sur_ℵ = ℵ[sur, sur]
+    ℵii_sur = diag(sur_ℵ)
+    if N_s > 1
+        ℵij_sum_sur = vec(sum(sur_ℵ, dims = 2).- diag(sur_ℵ))
+        ℵij_sur = [sur_ℵ[i,j] for i in 1:N_s for j in 1:N_s if i != j]
+        up_ℵij_sur = [sur_ℵ[i,j] for i in 1:N_s for j in 1:N_s if i > j]
+        low_ℵij_sur = [sur_ℵ[i,j] for i in 1:N_s for j in 1:N_s if i < j]
+        D_ℵij_sur = up_ℵij_sur./low_ℵij_sur
+        push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_up_ℵij, up_ℵij); push!(all_low_ℵij, low_ℵij); 
+        push!(all_ℵij_sum, ℵij_sum); push!(all_D_ℵij, D_ℵij);
+        push!(all_ℵii_sur, ℵii_sur); push!(all_ℵij_sur, ℵij_sur); push!(all_up_ℵij_sur, up_ℵij_sur); push!(all_low_ℵij_sur, low_ℵij_sur); 
+        push!(all_ℵij_sum_sur, ℵij_sum_sur); push!(all_D_ℵij_sur, D_ℵij_sur);
+    else 
+        push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_up_ℵij, up_ℵij); push!(all_low_ℵij, low_ℵij); 
+        push!(all_ℵij_sum, ℵij_sum); push!(all_D_ℵij, D_ℵij);
+        push!(all_ℵii_sur, ℵii_sur); push!(all_ℵij_sur, [missing]); push!(all_up_ℵij_sur, [missing]); push!(all_low_ℵij_sur, [missing]); 
+        push!(all_ℵij_sum_sur, [missing]); push!(all_D_ℵij_sur, [missing]);
+    end
+    next!(progress)
 end 
 
+
+# @load "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+using JSON
+D = (all_ℵii = all_ℵii, all_ℵij = all_ℵij, all_up_ℵij = all_up_ℵij,all_low_ℵij = all_low_ℵij, all_ℵij_sum= all_ℵij_sum, all_D_ℵij = all_D_ℵij,
+    all_ℵii_sur = all_ℵii_sur,  all_ℵij_sur = all_ℵij_sur, all_up_ℵij_sur = all_up_ℵij_sur, all_low_ℵij_sur = all_low_ℵij_sur, all_ℵij_sum_sur = all_ℵij_sum_sur, all_D_ℵij_sur = all_D_ℵij_sur);
+Dnames = ("αii", "αij", "up_αij", "low_αij", "sum_αij", "up_low", "αii_sur", "αij_sur", "up_αij_sur", "low_αij_sur", "sum_αij_sur", "up_low_sur");
+
+### saving data in different formats 
+# using JSON
+# json_d = JSON.json(D)
+# open("../data/1com-1.json", "w") do file 
+#     write(file, json_d)
+# end 
+# # @save "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+
 Temp_rich = range(0, num_temps-1, length = num_temps)
-
-using LsqFit, GLM
-k = 0.0000862 # Boltzman constant
-temp_SS(T, params) = params[1] .* exp.((-params[2]./k) * ((1 ./T) .-(1/Tr)))./(1 .+ (params[2]./(params[4] .- params[2])) .* exp.(params[4]/k * (1 ./params[3] .- 1 ./T)))
-
-Random.seed!(6); 
+k = 0.0000862
 x = -1/k .* (1 ./(Temp_rich .+273.15) .- 1/Tr)
 temp = collect(Temp_rich .+273.15)
 
-f1 = Figure(resolution = (1200, 1200));
-f2 = Figure(resolution = (1200, 1200));
-# f3 = Figure(resolution = (1200, 1200));
-# f4 = Figure(resolution = (1200, 1200));
-ax1 = Axis(f1[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50)
-ax2 = Axis(f2[1,1], xlabel = "Temperature (°C)", ylabel = "αij", xlabelsize = 50, ylabelsize = 50)
+########### Fitting community α #################
+include("./fitting.jl");
 
-Temp_α = zeros(Float64, N, 11)
-for i in 1:N
-    αii = [all_ℵii[t][i] for t in 1:num_temps]
-    Tpii = Temp_rich[argmax(abs.(αii))] + 273.15
-    Eii = maximum(diff(log.(abs.(αii)))./diff(x))
-    init_ii = [abs(αii[Int(Tr-273.15+1)]), Eii, Tpii, 3.5]
+# iters_v = 500
+# progress = Progress(length(D); desc="running progress:")
+# for fn in 1:length(D)
+#     Nα, init_in, AIC_in, temp_all, allα = try_params(D[fn], num_temps, iters_v)
+#     name = Symbol("param_", Dnames[fn])
+#     fit_ss_final = curve_fit(temp_SS, temp_all, allα, init_in)
+#     name_final = Symbol("result_", Dnames[fn])
+#     @eval $name_final = fit_ss_final.param
+#     next!(progress)
+# end 
 
-    αij = [all_ℵij[t][i] for t in 1:num_temps]
-    Tpij = Temp_rich[argmax(abs.(αij))] + 273.15
-    Eij = maximum(diff(log.(abs.(αij)))./diff(x))
-    init_ij = [abs(αij[Int(Tr-273.15+1)]), Eij, Tpij, 3.5]
+# f1 = Figure(resolution = (1200, 1200));
+# ax1 = Axis(f1[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50)
+# scatter!(ax1, temp_all .- 273.15, log.(abs.(allii)), color = "#285C93", alpha = 0.5)
+# lines!(ax1, Temp_rich, log.(abs.(temp_SS(temp, fit_ii.param))), color = ("#E17542", 1), linewidth = 1)
+# lines!(ax1, Temp_rich, ii, color = ("#285C93", 1), linewidth = 1)
+# f1
 
-    fit_ii = curve_fit(temp_SS, temp, abs.(αii), init_ii)
-    fit_ij = curve_fit(temp_SS, temp, abs.(αij), init_ij)
-    # ax1 = Axis(f1[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
-    # ax2 = Axis(f2[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
-    # ax3 = Axis(f3[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
-    # ax4 = Axis(f4[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
-    # lines!(ax1, Temp_rich, abs.(αii), color = ("#285C93", 1), linewidth = 1)
-    # lines!(ax2, Temp_rich, abs.(temp_SS(temp, fit_ii.param)), color = ("#E17542", 1), linewidth = 1)
-    # lines!(ax3, Temp_rich, abs.(αij), color = ("#285C93", 1), linewidth = 1)
-    # lines!(ax4, Temp_rich, abs.(temp_SS(temp, fit_ij.param)), color = ("#E17542", 1), linewidth = 1)
-    scatter!(ax1, Temp_rich, log.(abs.(αii)), color = "#285C93", alpha = 0.5)
-    scatter!(ax2, Temp_rich, log.(abs.(αij)), color = "#E17542", alpha = 0.5)
+################# Fitting each α ##################
+# progress = Progress(length(D); desc="Progress running:")
+# for fn in 1:length(D)
+#     f = Figure(size = (1200, 1200));
+#     ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "$(Dnames[fn])", xlabelsize = 50, ylabelsize = 50)
+#     Nα, B_m, E_up, T_m, temp_all, allα = get_init_param(D[fn], num_temps)
+#         # ax = Axis(f[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
+#     scatter!(ax, temp_all, log.(allα), color = "#285C93", alpha = 0.5)
+#     F_n = Symbol("f", fn)
+#     @eval $F_n = f
+#     # save("../results/1com_$(Dnames[fn]).png", f) 
+#     next!(progress)
+# end
 
-    Temp_α[Int(i),:] = vcat(Int(i),fit_ii.param, AIC(fit_ii, num_temps), fit_ij.param, AIC(fit_ij, num_temps))
-end 
-col_names_α = ["species","Bii", "Eii", "Tpii", "Edii", "AIC_ii", "Bij", "Eij", "Tpij", "Edij", "AIC_ij"];
-Temp_α = DataFrame(Temp_α, col_names_α);
-f1
-# CSV.write("../data/Tα.csv", Temp_α, writeheader=true)
-
+# f1
+progress = Progress(N; desc="Progress running:")
 temp = collect(Temp_rich .+273.15)
-temp_all = repeat(temp ,inner = 100)
-allii = vcat(all_ℵii...)
-
-
-ii = [mean(log.(abs.(all_ℵii[t][i])) for i in 1:N) for t in 1:num_temps]
-Tpii_m = Temp_rich[argmax(ii)]
-Bii_m = ii[Int(Tr-273.15+1)]
-Eii_up = maximum(diff(ii)./diff(x))
-Eiir = range(0, Eii_up, 50000)
-
-Eii_all = zeros(Float64, 50000, 4)
-for i in 1: 50000
-    Bii = exp(rand(Normal(Bii_m, 5)))
-    Eii = rand(Uniform(0, Eii_up))
-    Tpii = 273.15 .+ rand(Normal(Tpii_m, 10))
-    init_ii = [Bii, Eii, Tpii, 3.5]
-    fit_ii = curve_fit(temp_SS, temp_all, abs.(allii), init_ii)
-    AICii = AIC(fit_ii, num_temps * N)
-    Eii_all[Int(i),:] = [Bii, Eii, Tpii, AICii]
-    if i%500 == 0
-        print(i/50000, "\n")
+f1 = Figure(size = (1200, 1200));
+@time for i in 1:N 
+        αii = [all_ℵii[t][i] for t in 1:num_temps]
+        Nα, init_in, AIC_in, temp_all, allα = try_params(αii, num_temps, 2000)
+        fit_ii = curve_fit(temp_SS, temp, αii, init_in)
+        ax1 = Axis(f1[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
+        scatter!(ax1, Temp_rich, abs.(αii), color = "#285C93", alpha = 0.5)
+        lines!(ax1, Temp_rich, abs.(temp_SS(temp, fit_ii.param)), color = ("#E17542", 1), linewidth = 1)
+        next!(progress)
     end 
-end 
 
-Bii = Eii_all[:,1][argmin(Eii_all[:,4])]
-Eii = Eii_all[:,2][argmin(Eii_all[:,4])]
-Tpii = Eii_all[:,3][argmin(Eii_all[:,4])]
-
-init_ii = [Bii, Eii, Tpii, 3.5]
-
-fit_ii = curve_fit(temp_SS, temp_all, abs.(allii), init_ii)
-AIC(fit_ii, num_temps * N)
-fit_ii.param
-
-f1 = Figure(resolution = (1200, 1200));
-ax1 = Axis(f1[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50)
-scatter!(ax1, temp_all .- 273.15, log.(abs.(allii)), color = "#285C93", alpha = 0.5)
-lines!(ax1, Temp_rich, log.(abs.(temp_SS(temp, fit_ii.param))), color = ("#E17542", 1), linewidth = 1)
-lines!(ax1, Temp_rich, ii, color = ("#285C93", 1), linewidth = 1)
 f1
+R"library(beepr); beep(sound = 4, expr = NULL)"
+# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted.png", f1) 
+

@@ -101,9 +101,9 @@ all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_
         push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom)
     else 
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
-        push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, missing); push!(all_ℵij_d_sur, missing); push!(all_uℵij_sur, missing); push!(all_lℵij_sur, missing); 
+        push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, [missing]); push!(all_ℵij_d_sur, [missing]); push!(all_uℵij_sur, [missing]); push!(all_lℵij_sur, [missing]); 
         push!(all_r, sur_r);
-        push!(all_u, u); push!(all_m, m); push!(RO, missing); push!(ulO, missing); push!(Rul, missing);
+        push!(all_u, u); push!(all_m, m); push!(RO, [missing]); push!(ulO, [missing]); push!(Rul, [missing]);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
         push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom)

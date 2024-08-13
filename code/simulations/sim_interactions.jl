@@ -6,7 +6,7 @@ M=50
 L = 0.3
 ### Temp params 
 num_temps = 38
-ρ_t= [-0.9999 -0.9999]; # realistic covariance
+ρ_t= [-0.1384 -0.1384]; # realistic covariance
 Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
 ###################################
 # Generate MiCRM parameters
@@ -68,7 +68,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
 end 
 
 
-# @load "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+# @load "../data/1com_re.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
 using JSON
 D = (all_ℵii = all_ℵii, all_ℵij = all_ℵij, all_up_ℵij = all_up_ℵij,all_low_ℵij = all_low_ℵij, all_ℵij_sum= all_ℵij_sum, all_D_ℵij = all_D_ℵij,
     all_ℵii_sur = all_ℵii_sur,  all_ℵij_sur = all_ℵij_sur, all_up_ℵij_sur = all_up_ℵij_sur, all_low_ℵij_sur = all_low_ℵij_sur, all_ℵij_sum_sur = all_ℵij_sum_sur, all_D_ℵij_sur = all_D_ℵij_sur);
@@ -80,7 +80,8 @@ Dnames = ("αii", "αij", "up_αij", "low_αij", "sum_αij", "up_low", "αii_sur
 # open("../data/1com-1.json", "w") do file 
 #     write(file, json_d)
 # end 
-# # @save "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+
+# @save "../data/1com_re.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 k = 0.0000862
@@ -126,17 +127,30 @@ include("./fitting.jl");
 progress = Progress(N; desc="Progress running:")
 temp = collect(Temp_rich .+273.15)
 f1 = Figure(size = (1200, 1200));
+fitted = zeros(Float64, N, 6)
 @time for i in 1:N 
         αii = [all_ℵii[t][i] for t in 1:num_temps]
-        Nα, init_in, AIC_in, temp_all, allα = try_params(αii, num_temps, 2000)
+        Nα, init_in, AIC_in, temp_all, allα = try_params(αii, num_temps, 1000)
         fit_ii = curve_fit(temp_SS, temp, αii, init_in)
+        r_square = calculate_r2(fit_ii, temp_all, allα)
+        params = fit_ii.param
+        ## calculate_r2
+        pred = abs.(temp_SS(temp, params))
+        ss_res = sum((allα .- pred).^2)
+        ss_tot = sum((allα .- mean(allα)).^2)
+        r_square = 1 - ss_res / ss_tot
+        ## calculate_AIC
+        aic_value = N * log(ss_res / N) + 2 * 4
+        ## store data
+        fitted[Int(i),:] = vcat(params, aic_value, r_square)
+        ## plotting data
         ax1 = Axis(f1[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
         scatter!(ax1, Temp_rich, abs.(αii), color = "#285C93", alpha = 0.5)
-        lines!(ax1, Temp_rich, abs.(temp_SS(temp, fit_ii.param)), color = ("#E17542", 1), linewidth = 1)
+        lines!(ax1, Temp_rich, pred, color = ("#E17542", 1), linewidth = 1)
         next!(progress)
     end 
-
-f1
 R"library(beepr); beep(sound = 4, expr = NULL)"
-# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted.png", f1) 
+# CSV.write("../results/αii_fitted-1.csv", fitted, writeheader=false)
+f1
+# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted-1.png", f1) 
 

@@ -1,3 +1,4 @@
+setwd("../../temp_interactions/code")
 rm(list = ls());  gc()
 library(ggplot2)
 library(jsonlite)
@@ -28,6 +29,28 @@ rm(D);  gc()
 colnames(df) = paste0("S", seq(1,ncol(df),length = ncol(df)))
 df$Temp = temp
 
+initials = data.frame()
+for(i in 1:N){
+  cS = paste0("S",i)
+  αii =df[[cS]][!is.na(df[[cS]])]
+  # if(length(subset[,s][!is.na(subset[,s])]) > 4){
+  B0_start = sum(αii[10:12])/3
+  Th_start = temp[which.max(αii)] 
+  ## Fitting lnB ~ -1/k*(1/T-1/283.15) as linear model (Arrhenius)
+  ## intercept = lnB0, slope = Ea 
+  befdeact = log(αii[temp <= Th_start]) # lnB before deactivation
+  B_befT = x_v[temp <= Th_start] # -1/k*(1/T-1/283.15) before deactivation
+  lm_Arr = lm(befdeact~B_befT)
+  # max(diff(log(df[[cS]]))/diff(x_v))
+  B0_start = exp(summary(lm_Arr)$coefficients[1])
+  Ea_start = summary(lm_Arr)$coefficients[2]
+  # row = data.frame(r_tref = exp(lnB0_start), e = Ea_start, eh = 7, th = Th_start)
+  row = data.frame(r_tref = B0_start, e = Ea_start, eh = Ea_start, th = Th_start)
+  initials = rbind(initials, row)
+}
+
+
+##################
 pb <- progress::progress_bar$new(total = ncol(df)-1, # 5*N
                                  clear = FALSE,
                                  format ="[:bar] :percent :elapsedfull")
@@ -39,21 +62,19 @@ for(i in 1:(ncol(df)-1)){
   }
   
   cS = paste0("S",i)
-  start_vals <- get_start_vals(df$Temp, df[[cS]], model_name = 'sharpeschoolhigh_1981')
+  # start_vals <- get_start_vals(df$Temp, df[[cS]], model_name = 'sharpeschoolhigh_1981')
+  start_vals = initials[i,]
   start_vals[is.na(start_vals)] = 0.0
-  start_vals[is.infinite(start_vals)] = 0.0
-  start_vals[1] = df[[cS]][11]
-  start_vals[2] = max(diff(log(df[[cS]]))/diff(x_v))
+  start_vals[is.infinite(unlist(start_vals))] = 0.0
   formula_str <- paste0("S", i, " ~ sharpeschoolhigh_1981(temp = Temp, r_tref, e, eh, th, tref = 10)")
   formula <- as.formula(formula_str)
   ss_mod <- tryCatch({
-    nls_multstart(S3 ~ sharpeschoolhigh_1981(temp = Temp, r_tref, e, eh, th, tref = 10),
-                  data = df,
-                  iter = c(10, 10 ,4 ,4),
+    nls_multstart(αii ~ sharpeschoolhigh_1981(temp = temp, r_tref, e, eh, th, tref = 10),
+                  iter = 2000,
                   start_lower = c(0, 0, 0, start_vals[4]-10),
                   start_upper = c(start_vals[1]*10, start_vals[2]*2, start_vals[3]*2, start_vals[4]+10),
-                  # lower = get_lower_lims(df$Temp, df[[cS]], model_name = 'sharpeschoolhigh_1981'),
-                  # upper = get_upper_lims(df$Temp, df[[cS]], model_name = 'sharpeschoolhigh_1981'),
+                  lower = get_lower_lims(temp, αii, model_name = 'sharpeschoolhigh_1981'),
+                  upper = get_upper_lims(temp, αii, model_name = 'sharpeschoolhigh_1981'),
                   supp_errors = 'Y')},
     error = function(e){})
   tidy(ss_mod)
@@ -61,9 +82,9 @@ for(i in 1:(ncol(df)-1)){
     x <- tryCatch(tidy(ss_mod), error = function(x){})
     if (!is.null(x)) {
       if (!any(is.nan(x$p.value))) {
-        # if (all(x$p.value < 0.05)) {
+        if (all(x$p.value < 0.1)) {
         fitted_matrix[i,] <- as.numeric(c(coef(ss_mod), AIC(ss_mod)))
-        # }
+        }
       }
     }
   }
@@ -81,11 +102,8 @@ long_df <- df %>%
                names_to = "ID",  # Name of the new column for old column names
                values_to = "rate")
 d <- filter(long_df, ID == cS)
-
-preds <- data.frame(fitted = sharpeschoolhigh_1981(temp = new_temp, r_tref = as.numeric(fitted_matrix[i,1]),
-                              e = as.numeric(fitted_matrix[i,2]), eh = as.numeric(fitted_matrix[i,3]),
-                              th = as.numeric(fitted_matrix[i,1]), tref = 10),
-                    temp = new_temp)
+preds <- data.frame(fitted = sharpeschoolhigh_1981(temp = temp,r_tref = coef(ss_mod)[1], e = coef(ss_mod)[2], eh = coef(ss_mod)[3], th = coef(ss_mod)[4], tref = 10),
+                    temp = temp)
 
 # Plot using ggplot2
 ggplot(d, aes(temp, rate)) +

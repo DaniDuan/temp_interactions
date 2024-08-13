@@ -1,7 +1,7 @@
 include("./sim_frame.jl")
-
+using ProgressMeter, RCall
 using Glob
-path = glob("Eff_iters*", "../data/Eff_p0/")
+path = glob("Eff_iters*", "../data/realistic/")
 
 N=100
 M=50
@@ -21,37 +21,40 @@ num_temps = 31
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 
-Eff_results = zeros(Float64, num_temps, 49)
-@time for j in 1: num_temps
+progress = Progress(length(path)*num_temps; desc="Progress running:")
 
-    all_ℵ_H = Float64[]; all_ℵii_H = Float64[]; all_ℵij_H = Union{Float64, Missing}[]; ; all_ℵij_d_H = Union{Float64, Missing}[];
+Eff_results = zeros(Float64, num_temps, 59)
+@time for j in 1: num_temps
+    all_ℵii_H = Float64[]; all_ℵij_H = Union{Float64, Missing}[]; all_ℵij_d_H = Union{Float64, Missing}[];
+    all_uℵij_H = Union{Float64, Missing}[]; all_lℵij_H = Union{Float64, Missing}[]; 
+    all_ℵii_sur_H = Union{Float64, Missing}[]; all_ℵij_sur_H = Union{Float64, Missing}[]; all_ℵij_d_sur_H = Union{Float64, Missing}[];
+    all_uℵij_sur_H = Union{Float64, Missing}[]; all_lℵij_sur_H = Union{Float64, Missing}[];
     all_r_H = Float64[]; 
     all_leading_H = Float64[]; all_diag_H = Float64[];radi_H = Float64[]; diag_dominance_H = Float64[];
-    all_u_H = Float64[]; all_m_H = Float64[]; RO_H = Union{Float64, Missing}[]; ulO_H = Union{Float64, Missing}[]; Rul_H = Union{Float64, Missing}[]; all_UDLD_H = Union{Float64, Missing}[];
+    all_u_H = Float64[]; all_m_H = Float64[]; RO_H = Union{Float64, Missing}[]; ulO_H = Union{Float64, Missing}[]; Rul_H = Union{Float64, Missing}[]; 
     all_Eu_H = Float64[]; all_Em_H = Float64[]; all_Eu_sur_H = Float64[]; all_Em_sur_H = Float64[];
     all_Tpu_H = Float64[]; all_Tpm_H = Float64[]; all_Tpu_sur_H = Float64[]; all_Tpm_sur_H = Float64[]; all_sumαij = Float64[]
 
     for i in 1:length(path)
-        @load path[i] all_ℵ all_ℵii all_ℵij all_ℵij_d all_r  all_u all_m RO ulO Rul all_UDLD all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance 
-        αij = [sum(reshape(all_ℵ[i],Int(sqrt(length(all_ℵ[i]))),Int(sqrt(length(all_ℵ[i])))), dims = 2).- diag(reshape(all_ℵ[i],Int(sqrt(length(all_ℵ[i]))),Int(sqrt(length(all_ℵ[i]))))) for i in 1:num_temps]
-        append!(all_ℵ_H, all_ℵ[j]); append!(all_ℵii_H, all_ℵii[j]); append!(all_ℵij_H, all_ℵij[j]); append!(all_ℵij_d_H, all_ℵij_d[j]);
+        @load path[i] all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance 
+        append!(all_ℵii_H, all_ℵii[j]); append!(all_ℵij_H, all_ℵij[j]); append!(all_ℵij_d_H,all_ℵij_d[j]); append!(all_uℵij_H,all_uℵij[j]); append!(all_lℵij_H,all_lℵij[j]);
+        append!(all_ℵii_sur_H, all_ℵii_sur[j]); append!(all_ℵij_sur_H, all_ℵij_sur[j]); append!(all_ℵij_d_sur_H, all_ℵij_d_sur[j]); append!(all_uℵij_sur_H, all_uℵij_sur[j]); append!(all_lℵij_sur_H, all_lℵij_sur[j]);
         append!(all_r_H, all_r[j]);
-        append!(all_u_H, all_u[j]); append!(all_m_H, all_m[j]); append!(RO_H, RO[j]); append!(ulO_H, ulO[j]); append!(Rul_H, Rul[j]); append!(all_UDLD_H, all_UDLD[j]);
+        append!(all_u_H, all_u[j]); append!(all_m_H, all_m[j]); append!(RO_H, RO[j]); append!(ulO_H, ulO[j]); append!(Rul_H, Rul[j]);
         append!(all_Eu_H, all_Eu[j]); append!(all_Em_H, all_Em[j]); append!(all_Eu_sur_H, all_Eu_sur[j]); append!(all_Em_sur_H, all_Em_sur[j]);
         append!(all_Tpu_H, all_Tpu[j]); append!(all_Tpm_H, all_Tpm[j]); append!(all_Tpu_sur_H, all_Tpu_sur[j]); append!(all_Tpm_sur_H, all_Tpm_sur[j]);
-        push!(all_leading_H, all_leading[j]); append!(all_diag_H, all_diag[j]); append!(radi_H, radi[j]); push!(diag_dominance_H, diag_dominance[j]);
-        append!(all_sumαij, αij[j])
-    end 
+        push!(all_leading_H, all_leading[j]); append!(all_diag_H, all_diag[j]); append!(radi_H, radi[j]); push!(diag_dominance_H, diag_dominance[j])
+        next!(progress)
 
-    Eff_results[Int(j),:] = [mean(all_ℵ_H), std(all_ℵ_H)/sqrt(length(all_ℵ_H)), 
-    mean(all_ℵii_H), std(all_ℵii_H)/sqrt(length(all_ℵii_H)), mean(skipmissing(all_ℵij_H)), std(skipmissing(all_ℵij_H))/sqrt(length(all_ℵij_H)), 
-    mean(all_ℵij_d_H), std(all_ℵij_d_H)/sqrt(length(all_ℵij_d_H)),
-    mean(all_r_H), std(all_r_H)/sqrt(length(all_r_H)), mean(all_u_H), std(all_u_H)/sqrt(length(all_u_H)), 
-    mean(all_m_H), std(all_m_H)/sqrt(length(all_m_H)), 
+    end 
+    Eff_results[Int(j),:] = [mean(all_ℵii_H), std(all_ℵii_H)/sqrt(length(all_ℵii_H)), mean(skipmissing(all_ℵij_H)), std(skipmissing(all_ℵij_H))/sqrt(length(all_ℵij_H)), 
+    mean(skipmissing(all_ℵij_d_H)), std(skipmissing(all_ℵij_d_H))/sqrt(length(all_ℵij_d_H)), mean(skipmissing(all_uℵij_H)), std(skipmissing(all_uℵij_H))/sqrt(length(all_uℵij_H)), mean(skipmissing(all_lℵij_H)), std(skipmissing(all_lℵij_H))/sqrt(length(all_lℵij_H)), 
+    mean(all_ℵii_sur_H), std(all_ℵii_sur_H)/sqrt(length(all_ℵii_sur_H)), mean(skipmissing(all_ℵij_sur_H)), std(skipmissing(all_ℵij_sur_H))/sqrt(length(all_ℵij_sur_H)), 
+    mean(skipmissing(all_ℵij_d_sur_H)), std(skipmissing(all_ℵij_d_sur_H))/sqrt(length(all_ℵij_d_sur_H)), mean(skipmissing(all_uℵij_sur_H)), std(skipmissing(all_uℵij_sur_H))/sqrt(length(all_uℵij_sur_H)), mean(skipmissing(all_lℵij_sur_H)), std(skipmissing(all_lℵij_sur_H))/sqrt(length(all_lℵij_sur_H)), 
+    mean(all_r_H), std(all_r_H)/sqrt(length(all_r_H)), mean(all_u_H), std(all_u_H)/sqrt(length(all_u_H)), mean(all_m_H), std(all_m_H)/sqrt(length(all_m_H)), 
     mean(skipmissing(RO_H)), std(skipmissing(RO_H))/sqrt(length(RO_H)),
     mean(skipmissing(ulO_H)), std(skipmissing(ulO_H))/sqrt(length(ulO_H)),
     mean(skipmissing(Rul_H)), std(skipmissing(Rul_H))/sqrt(length(Rul_H)),
-    mean(skipmissing(all_UDLD_H)), std(skipmissing(all_UDLD_H))/sqrt(length(all_UDLD_H)),
     mean(all_Eu_H), std(all_Eu_H)/sqrt(length(all_Eu_H)), mean(all_Em_H), std(all_Em_H)/sqrt(length(all_Em_H)),
     mean(all_Eu_sur_H), std(all_Eu_sur_H)/sqrt(length(all_Eu_sur_H)), mean(all_Em_sur_H), std(all_Em_sur_H)/sqrt(length(all_Em_sur_H)),
     mean(all_Tpu_H), std(all_Tpu_H)/sqrt(length(all_Tpu_H)), mean(all_Tpm_H), std(all_Tpm_H)/sqrt(length(all_Tpm_H)),
@@ -60,22 +63,20 @@ Eff_results = zeros(Float64, num_temps, 49)
     mean(diag_dominance_H), std(diag_dominance_H)/sqrt(length(diag_dominance_H)), 
     mean(all_diag_H), std(all_diag_H)/sqrt(length(all_diag_H)), mean(radi_H), std(radi_H)/sqrt(length(radi_H)),
     mean(all_sumαij), std(all_sumαij)/sqrt(length(all_sumαij))]
-
-    print(j-1, " °C Complete, ", "α ",mean(all_ℵ_H),"\n") 
 end 
-
-col_names_EF = ["α", "α_err", "αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err",
-                   "r", "r_err", "u", "u_err","m", "m_err", 
-                   "RO", "RO_err", "ulO", "ulO_err", "estα", "estα_err",
-                   "UDLD", "UDLD_err",
-                   "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
-                   "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err",
-                   "eigen", "eigen_err", "stability",
-                   "diag_dom", "diag_dom_err",
-                   "Jac_diag", "Jac_diag_err", "radius", "radius_err", "sum_αij", "sum_αij_err"];
+R"library(beepr); beep(sound = 4, expr = NULL)"
+col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", "αij_upper", "αij_upper_err","αij_lower", "αij_lower_err",
+                "αii_sur", "αii_sur_err", "αij_sur", "αij_sur_err", "αij_d_sur", "αij_d_sur_err", "αij_upper_sur", "αij_upper_sur_err","αij_lower_sur", "αij_lower_sur_err",
+                "r", "r_err", "u", "u_err","m", "m_err", 
+                "RO", "RO_err", "ulO", "ulO_err", "estα", "estα_err",
+                "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
+                "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err",
+                "eigen", "eigen_err", "stability",
+                "diag_dom", "diag_dom_err",
+                "Jac_diag", "Jac_diag_err", "radius", "radius_err", "sum_αij", "sum_αij_err"];
 Eff_results = DataFrame(Eff_results, col_names_EF);
 
-# CSV.write("../data/Eff_results-1.csv", Eff_results, writeheader=false)
+# CSV.write("../data/Eff_results_re.csv", Eff_results, writeheader=false)
 
 f = Figure(resolution = (1200, 1200));
 for j in 1: num_temps

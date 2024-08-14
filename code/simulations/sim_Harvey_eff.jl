@@ -5,8 +5,8 @@ M=50
 L = 0.3
 ### Temp params 
 num_temps = 31
-ρ_t= [0.0000 0.0000]; # realistic covariance
-Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
+ρ_t= [-0.3500 -0.3500]; # realistic covariance
+Tr=273.15+10; Ed=3.5 
 ###################################
 # Generate MiCRM parameters
 tspan = (0.0, 1.5e8)
@@ -27,7 +27,8 @@ all_r = Vector{Vector{Float64}}();
 all_leading = Float64[]; all_diag = Vector{Vector{Float64}}();radi = Vector{Vector{Float64}}(); diag_dominance = Float64[];
 all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}(); RO = Vector{Vector{Union{Float64, Missing}}}(); ulO = Vector{Vector{Union{Float64, Missing}}}(); Rul = Vector{Vector{Union{Float64, Missing}}}(); 
 all_Eu =  Vector{Vector{Float64}}(); all_Em =  Vector{Vector{Float64}}(); all_Eu_sur = Vector{Vector{Float64}}(); all_Em_sur = Vector{Vector{Float64}}();
-all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_Tpu_sur = Vector{Vector{Float64}}(); all_Tpm_sur = Vector{Vector{Float64}}()
+all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_Tpu_sur = Vector{Vector{Float64}}(); all_Tpm_sur = Vector{Vector{Float64}}();
+all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}()
 
 @time for i in range(0, stop = 30, length = 31)
     T = 273.15 + i
@@ -40,7 +41,9 @@ all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_
     sur = (1:N)[bm .> 1.0e-7]
     N_s = length(sur)
     R_t = sol.u[length(sol.t)][N+1:N+M]
+    R_rela = R_t ./ sum(R_t)
     C_t = sol.u[length(sol.t)][1:N][sur]
+    C_rela = C_t ./ sum(C_t)
     ## getting effective LV coefficients
     p_lv = Eff_LV_params(p=p, sol=sol);
     # number of species with r>0 at equilibium 
@@ -98,7 +101,8 @@ all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_
         push!(all_u, u); push!(all_m, m); push!(RO, R_over); push!(ulO, ul_over); push!(Rul, Rul_over);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom)
+        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_Rrela, R_rela); push!(all_Crela, C_rela)
     else 
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
         push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, [missing]); push!(all_ℵij_d_sur, [missing]); push!(all_uℵij_sur, [missing]); push!(all_lℵij_sur, [missing]); 
@@ -106,10 +110,11 @@ all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_
         push!(all_u, u); push!(all_m, m); push!(RO, [missing]); push!(ulO, [missing]); push!(Rul, [missing]);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom)
+        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_Rrela, R_rela); push!(all_Crela, C_rela)
     end
 end 
 
-@save "../data/20240809/p0/Eff_iters0_$(index).jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance 
+@save "../data/20240814/p_re/Eff_iters_re_$(index).jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance all_Rrela all_Crela
 
 # @load "../data/Eff_iter/Eff_iters1.jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance 

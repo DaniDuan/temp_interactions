@@ -155,3 +155,13 @@ end
 
 plot(Temp_rich, log.(abs.(all_yij)))
 
+
+#################################
+c = Int64[]
+for j in 1: 9
+    for n in 1:10
+        i = 10*(j-1) + n
+        push!(c, i)
+    end 
+end 
+println(c)

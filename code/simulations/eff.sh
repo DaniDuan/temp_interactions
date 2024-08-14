@@ -7,6 +7,6 @@
 #SBATCH --array=1-999
 
 echo "Julia is about to run"
-julia sim_Harvey_eff.jl
+julia sim_Harvey_eff-1.jl
 echo "Julia has finished running"
 

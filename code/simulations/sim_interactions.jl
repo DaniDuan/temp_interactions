@@ -6,8 +6,8 @@ M=50
 L = 0.3
 ### Temp params 
 num_temps = 38
-ρ_t= [-0.1384 -0.1384]; # realistic covariance
-Tr=273.15+10; Ed=3.5 #[-0.1384 -0.1384]
+ρ_t= [-0.3500 -0.3500]; # realistic covariance
+Tr=273.15+10; Ed=3.5 
 ###################################
 # Generate MiCRM parameters
 tspan = (0.0, 1.5e8)
@@ -66,22 +66,15 @@ for i in range(0, stop = num_temps-1, length = num_temps)
     end
     next!(progress)
 end 
+R"library(beepr); beep(sound = 4, expr = NULL)"
 
 
-# @load "../data/1com_re.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
-using JSON
+@load "../data/1com_0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
 D = (all_ℵii = all_ℵii, all_ℵij = all_ℵij, all_up_ℵij = all_up_ℵij,all_low_ℵij = all_low_ℵij, all_ℵij_sum= all_ℵij_sum, all_D_ℵij = all_D_ℵij,
     all_ℵii_sur = all_ℵii_sur,  all_ℵij_sur = all_ℵij_sur, all_up_ℵij_sur = all_up_ℵij_sur, all_low_ℵij_sur = all_low_ℵij_sur, all_ℵij_sum_sur = all_ℵij_sum_sur, all_D_ℵij_sur = all_D_ℵij_sur);
 Dnames = ("αii", "αij", "up_αij", "low_αij", "sum_αij", "up_low", "αii_sur", "αij_sur", "up_αij_sur", "low_αij_sur", "sum_αij_sur", "up_low_sur");
 
-### saving data in different formats 
-# using JSON
-# json_d = JSON.json(D)
-# open("../data/1com-1.json", "w") do file 
-#     write(file, json_d)
-# end 
-
-# @save "../data/1com_re.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+### @save "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 k = 0.0000862
@@ -91,47 +84,17 @@ temp = collect(Temp_rich .+273.15)
 ########### Fitting community α #################
 include("./fitting.jl");
 
-# iters_v = 500
-# progress = Progress(length(D); desc="running progress:")
-# for fn in 1:length(D)
-#     Nα, init_in, AIC_in, temp_all, allα = try_params(D[fn], num_temps, iters_v)
-#     name = Symbol("param_", Dnames[fn])
-#     fit_ss_final = curve_fit(temp_SS, temp_all, allα, init_in)
-#     name_final = Symbol("result_", Dnames[fn])
-#     @eval $name_final = fit_ss_final.param
-#     next!(progress)
-# end 
-
-# f1 = Figure(resolution = (1200, 1200));
-# ax1 = Axis(f1[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50)
-# scatter!(ax1, temp_all .- 273.15, log.(abs.(allii)), color = "#285C93", alpha = 0.5)
-# lines!(ax1, Temp_rich, log.(abs.(temp_SS(temp, fit_ii.param))), color = ("#E17542", 1), linewidth = 1)
-# lines!(ax1, Temp_rich, ii, color = ("#285C93", 1), linewidth = 1)
-# f1
-
-################# Fitting each α ##################
-# progress = Progress(length(D); desc="Progress running:")
-# for fn in 1:length(D)
-#     f = Figure(size = (1200, 1200));
-#     ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "$(Dnames[fn])", xlabelsize = 50, ylabelsize = 50)
-#     Nα, B_m, E_up, T_m, temp_all, allα = get_init_param(D[fn], num_temps)
-#         # ax = Axis(f[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
-#     scatter!(ax, temp_all, log.(allα), color = "#285C93", alpha = 0.5)
-#     F_n = Symbol("f", fn)
-#     @eval $F_n = f
-#     # save("../results/1com_$(Dnames[fn]).png", f) 
-#     next!(progress)
-# end
-
+all_ℵij_sum
 # f1
 progress = Progress(N; desc="Progress running:")
 temp = collect(Temp_rich .+273.15)
 f1 = Figure(size = (1200, 1200));
 fitted = zeros(Float64, N, 6)
 @time for i in 1:N 
-        αii = [all_ℵii[t][i] for t in 1:num_temps]
-        Nα, init_in, AIC_in, temp_all, allα = try_params(αii, num_temps, 1000)
-        fit_ii = curve_fit(temp_SS, temp, αii, init_in)
+        next!(progress)
+        αii = [all_ℵij_sum[t][i] for t in 1:num_temps]
+        Nα, init_in, AIC_in, temp_all, allα = try_params(αii, num_temps, 2000)
+        fit_ii = curve_fit(temp_SS, temp_all, allα, init_in)
         r_square = calculate_r2(fit_ii, temp_all, allα)
         params = fit_ii.param
         ## calculate_r2
@@ -147,10 +110,42 @@ fitted = zeros(Float64, N, 6)
         ax1 = Axis(f1[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
         scatter!(ax1, Temp_rich, abs.(αii), color = "#285C93", alpha = 0.5)
         lines!(ax1, Temp_rich, pred, color = ("#E17542", 1), linewidth = 1)
-        next!(progress)
     end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
-# CSV.write("../results/αii_fitted-1.csv", fitted, writeheader=false)
-f1
-# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted-1.png", f1) 
 
+df_names = ["B0","E","Th","Ed","AIC","r2"]
+fitted = DataFrame(fitted, df_names);
+# CSV.write("../results/αii_fitted_0.csv", fitted, writeheader=false)
+CSV.write("../results/αij_sum_fitted_0.csv", fitted, writeheader=false)
+
+f1
+# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted_0.png", f1) 
+save("/Users/Danica/Documents/temp_interactions/results/αij_sum_fitted_0.png", f1) 
+# fitted = CSV.read("../results/αii_fitted-1.csv", DataFrame, header=false)
+
+fitted = fitted[fitted.E .> 0, :]
+fitted = fitted[fitted.B0 .> 0, :]
+
+mean_Bii = mean(log.(fitted.B0))
+var_Bii = var(log.(fitted.B0))/abs(mean(log.(fitted.B0)))
+mean_Eii = mean(fitted.E)
+var_Eii = var(fitted.E)/abs(mean(fitted.E))
+cor_ii = cor(log.(fitted.B0), fitted.E)
+
+Nα, B_m, E_m, T_m, Ed,temp_all, allα = get_init_param(all_ℵii, num_temps)
+E_p = mean(fitted.E[fitted.E .> 0])
+T_p = mean(fitted.Th[fitted.Th .> 0])
+init_in = [exp(B_m), E_p, T_p, Ed]
+fit_ii = curve_fit(temp_SS, temp_all, allα, init_in)
+## calculate_r2
+r_square = calculate_r2(fit_ii, temp_all, allα)
+pred = abs.(temp_SS(temp, fit_ii.param))
+E = fit_ii.param[2]
+
+f = Figure(fontsize = 35,size = (1200, 1200));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|αii|)", ygridvisible = false, xgridvisible = false, xlabelsize = 50, ylabelsize = 50)
+scatter!(ax, temp_all .- 273.15, log.(abs.(allα)), color = "#285C93", alpha = 0.5)
+lines!(ax, Temp_rich, log.(pred), color = ("#E17542", 1), linewidth = 1)
+text!(10, -4.5, text = "E = $(round(E, digits = 3))", align = (:center, :center), fontsize = 35)
+f
+# save("/Users/Danica/Documents/temp_interactions/results/αii_fitted_all-1.png", f) 

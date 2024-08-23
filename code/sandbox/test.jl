@@ -165,3 +165,32 @@ for j in 1: 9
     end 
 end 
 println(c)
+
+############ Plotting different alpha for Dirichlet ########
+# Function to sample from the Dirichlet distribution
+function sample_dirichlet(α, num_samples)
+    d = Dirichlet(α)
+    rand(d, num_samples)
+end
+
+alphas = [[100.0, 100.0, 100.0], [1.0, 1.0, 100.0], [1.0, 1.0, 1.0], [100.0, 100.0, 1.0]]
+num_samples = 1000
+
+f1 = Figure(size = (800, 800));
+f2 = Figure(size = (800, 800));
+
+for i in 1:length(alphas)
+    ax1 = Axis(f1[div(i-1, 2)+1, (i-1)%2+1], title = "α = " * string(alphas[i]));
+    ax2 = Axis(f2[div(i-1, 2)+1, (i-1)%2+1], title = "α = " * string(alphas[i]));
+    samples = sample_dirichlet(alphas[i], num_samples)
+    xlims!(ax1, -0.1, 1.1);
+    ylims!(ax1, -0.1, 1.1);
+    xlims!(ax2, -0.1, 1.1);
+    scatter!(ax1, samples[1, :], samples[2, :], color = samples[3, :], colormap = :viridis);
+    hist!(ax2, samples[1, :])
+    hist!(ax2, samples[2, :])
+    hist!(ax2, samples[3, :])
+end
+
+display(f1)
+display(f2)

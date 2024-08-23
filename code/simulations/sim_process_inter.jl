@@ -55,3 +55,47 @@ scatter!(ax, temp_all .- 273.15, log.(abs.(allα)), color = "#285C93", alpha = 0
 lines!(ax, Temp_rich, log.(pred), color = ("#E17542", 1), linewidth = 1)
 text!(10, -4.5, text = "E = $(round(E, digits = 3))", align = (:center, :center), fontsize = 35)
 f
+
+
+
+###################
+@load "../data/1com_0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur;
+
+fitted = CSV.read("../results/αij_fitted_all_0.csv", DataFrame, header=false)
+df_names = ["B0","E","Th","Ed","AIC","r2"]
+fitted = DataFrame(fitted, df_names);
+# fitted = fitted[fitted.r2 .> 0.9, :]
+fitted = fitted[fitted.E .> eps(), :]
+fitted = fitted[fitted.B0 .> eps(), :]
+fitted = fitted[fitted.Ed .> eps(), :]
+B_at_0 = fitted[fitted.r2 .> 0.9, :]
+pred = [abs.(temp_SS(temp, fitted[j, 1:4])) for j in 1:nrow(fitted)]
+B_at_0 = [pred[i][1] for i in 1:length(pred)]
+fitted_filter = fitted[B_at_0 .> eps(),: ]
+pred_filter = [abs.(temp_SS(temp, fitted_filter[j, 1:4])) for j in 1:nrow(fitted_filter)]
+
+allα = abs.(vcat(all_ℵij...))
+temp_all = vcat([repeat([temp[t]], length(all_ℵij[t])) for t in 1:num_temps]...)
+
+f = Figure(fontsize = 35,size = (1200, 1200));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|αij|)", ygridvisible = false, xgridvisible = false, xlabelsize = 50, ylabelsize = 50)
+scatter!(ax, temp_all .- 273.15, log.(abs.(allα)), color = "#285C93", alpha = 0.5)
+for i in 1: nrow(fitted)
+    lines!(ax, Temp_rich, log.(pred[i]), color = ("#E17542", 0.7), linewidth = 0.7)
+end 
+text!(10, -4.5, text = "E = $(round(mean(fitted.E),digits  =3))", align = (:center, :center), fontsize = 35)
+f
+
+
+
+fitted_all = CSV.read("../results/αij_fitted_all-1.csv", DataFrame, header=false)
+df_names = ["B0","E","Th","Ed","AIC","r2"]
+fitted_all = DataFrame(fitted_all, df_names);
+
+fitted_all_filter = fitted_all[fitted_all.B0 .> 0, :]
+fitted_all_filter = fitted_all_filter[fitted_all_filter.E .> 0, :]
+fitted_all_filter = fitted_all_filter[fitted_all_filter.Ed .> 0, :]
+fitted_all_filter = fitted_all_filter[fitted_all_filter.r2 .> 0.9, :]
+
+fitted_all_filter[fitted_all_filter.Th .> 0, :]
+

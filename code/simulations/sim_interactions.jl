@@ -143,7 +143,7 @@ pred = abs.(temp_SS(temp, fit_ii.param))
 E = fit_ii.param[2]
 
 f = Figure(fontsize = 35,size = (1200, 1200));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|αii|)", ygridvisible = false, xgridvisible = false, xlabelsize = 50, ylabelsize = 50)
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "log(|αij|)", ygridvisible = false, xgridvisible = false, xlabelsize = 50, ylabelsize = 50)
 scatter!(ax, temp_all .- 273.15, log.(abs.(allα)), color = "#285C93", alpha = 0.5)
 lines!(ax, Temp_rich, log.(pred), color = ("#E17542", 1), linewidth = 1)
 text!(10, -4.5, text = "E = $(round(E, digits = 3))", align = (:center, :center), fontsize = 35)

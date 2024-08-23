@@ -1,7 +1,7 @@
 include("./sim_frame.jl")
 using ProgressMeter, RCall
 using Glob
-path = glob("Eff_iters*", "../data/Eff_p0/")
+path = glob("Eff_iters*", "../data/Eff_p_re/")
 
 N=100
 M=50
@@ -23,8 +23,9 @@ Temp_rich = range(0, num_temps-1, length = num_temps)
 
 progress = Progress(length(path)*num_temps; desc="Progress running:")
 
-all_Rrela_collect = Vector{Vector{Float64}}(); all_Crela_collect = Vector{Vector{Float64}}()
-Eff_results = zeros(Float64, num_temps, 59)
+all_Rrela_collect = Vector{Vector{Float64}}(); all_Crela_collect = Vector{Vector{Float64}}();
+all_ii_collect = Vector{Vector{Float64}}(); all_ij_collect = Vector{Vector{Float64}}()
+Eff_results = zeros(Float64, num_temps, 65)
 @time for j in 1: num_temps
     all_ℵii_H = Float64[]; all_ℵij_H = Union{Float64, Missing}[]; all_ℵij_d_H = Union{Float64, Missing}[];
     all_uℵij_H = Union{Float64, Missing}[]; all_lℵij_H = Union{Float64, Missing}[]; 
@@ -32,17 +33,21 @@ Eff_results = zeros(Float64, num_temps, 59)
     all_uℵij_sur_H = Union{Float64, Missing}[]; all_lℵij_sur_H = Union{Float64, Missing}[];
     all_r_H = Float64[]; 
     all_leading_H = Float64[]; all_diag_H = Float64[];radi_H = Float64[]; diag_dominance_H = Float64[];
-    all_u_H = Float64[]; all_m_H = Float64[]; RO_H = Union{Float64, Missing}[]; ulO_H = Union{Float64, Missing}[]; Rul_H = Union{Float64, Missing}[]; 
+    all_u_H = Float64[]; all_m_H = Float64[]; 
+    RO_H = Float64[]; ulO_H = Float64[]; Rul_H = Float64[]; 
+    RO_sur_H = Union{Float64, Missing}[]; ulO_sur_H = Union{Float64, Missing}[];  Rul_sur_H = Union{Float64, Missing}[];
     all_Eu_H = Float64[]; all_Em_H = Float64[]; all_Eu_sur_H = Float64[]; all_Em_sur_H = Float64[];
     all_Tpu_H = Float64[]; all_Tpm_H = Float64[]; all_Tpu_sur_H = Float64[]; all_Tpm_sur_H = Float64[]; all_sumαij = Float64[];
     all_Rrela_H = Float64[]; all_Crela_H = Float64[]
 
     for i in 1:length(path)
-        @load path[i] all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance all_Rrela all_Crela
+        @load path[i] all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_u all_m RO ulO Rul RO_sur ulO_sur Rul_sur all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance all_Rrela all_Crela
         append!(all_ℵii_H, all_ℵii[j]); append!(all_ℵij_H, all_ℵij[j]); append!(all_ℵij_d_H,all_ℵij_d[j]); append!(all_uℵij_H,all_uℵij[j]); append!(all_lℵij_H,all_lℵij[j]);
         append!(all_ℵii_sur_H, all_ℵii_sur[j]); append!(all_ℵij_sur_H, all_ℵij_sur[j]); append!(all_ℵij_d_sur_H, all_ℵij_d_sur[j]); append!(all_uℵij_sur_H, all_uℵij_sur[j]); append!(all_lℵij_sur_H, all_lℵij_sur[j]);
         append!(all_r_H, all_r[j]);
-        append!(all_u_H, all_u[j]); append!(all_m_H, all_m[j]); append!(RO_H, RO[j]); append!(ulO_H, ulO[j]); append!(Rul_H, Rul[j]);
+        append!(all_u_H, all_u[j]); append!(all_m_H, all_m[j]); 
+        append!(RO_H, RO[j]); append!(ulO_H, ulO[j]); append!(Rul_H, Rul[j]);
+        append!(RO_sur_H, RO_sur[j]); append!(ulO_sur_H, ulO_sur[j]); append!(Rul_sur_H, Rul_sur[j]);
         append!(all_Eu_H, all_Eu[j]); append!(all_Em_H, all_Em[j]); append!(all_Eu_sur_H, all_Eu_sur[j]); append!(all_Em_sur_H, all_Em_sur[j]);
         append!(all_Tpu_H, all_Tpu[j]); append!(all_Tpm_H, all_Tpm[j]); append!(all_Tpu_sur_H, all_Tpu_sur[j]); append!(all_Tpm_sur_H, all_Tpm_sur[j]);
         push!(all_leading_H, all_leading[j]); append!(all_diag_H, all_diag[j]); append!(radi_H, radi[j]); push!(diag_dominance_H, diag_dominance[j]);
@@ -51,7 +56,8 @@ Eff_results = zeros(Float64, num_temps, 59)
         next!(progress)
 
     end 
-    push!(all_Rrela_collect, all_Rrela_H); push!(all_Crela_collect,all_Crela_H)
+    push!(all_Rrela_collect, all_Rrela_H); push!(all_Crela_collect,all_Crela_H);
+    push!(all_ii_collect, all_ℵii_H); push!(all_ij_collect, all_ℵij_H)
     Eff_results[Int(j),:] = [mean(all_ℵii_H), std(all_ℵii_H)/sqrt(length(all_ℵii_H)), mean(skipmissing(all_ℵij_H)), std(skipmissing(all_ℵij_H))/sqrt(length(all_ℵij_H)), 
     mean(skipmissing(all_ℵij_d_H)), std(skipmissing(all_ℵij_d_H))/sqrt(length(all_ℵij_d_H)), mean(skipmissing(all_uℵij_H)), std(skipmissing(all_uℵij_H))/sqrt(length(all_uℵij_H)), mean(skipmissing(all_lℵij_H)), std(skipmissing(all_lℵij_H))/sqrt(length(all_lℵij_H)), 
     mean(all_ℵii_sur_H), std(all_ℵii_sur_H)/sqrt(length(all_ℵii_sur_H)), mean(skipmissing(all_ℵij_sur_H)), std(skipmissing(all_ℵij_sur_H))/sqrt(length(all_ℵij_sur_H)), 
@@ -60,6 +66,9 @@ Eff_results = zeros(Float64, num_temps, 59)
     mean(skipmissing(RO_H)), std(skipmissing(RO_H))/sqrt(length(RO_H)),
     mean(skipmissing(ulO_H)), std(skipmissing(ulO_H))/sqrt(length(ulO_H)),
     mean(skipmissing(Rul_H)), std(skipmissing(Rul_H))/sqrt(length(Rul_H)),
+    mean(skipmissing(RO_sur_H)), std(skipmissing(RO_sur_H))/sqrt(length(RO_sur_H)),
+    mean(skipmissing(ulO_sur_H)), std(skipmissing(ulO_sur_H))/sqrt(length(ulO_sur_H)),
+    mean(skipmissing(Rul_sur_H)), std(skipmissing(Rul_sur_H))/sqrt(length(Rul_sur_H)),
     mean(all_Eu_H), std(all_Eu_H)/sqrt(length(all_Eu_H)), mean(all_Em_H), std(all_Em_H)/sqrt(length(all_Em_H)),
     mean(all_Eu_sur_H), std(all_Eu_sur_H)/sqrt(length(all_Eu_sur_H)), mean(all_Em_sur_H), std(all_Em_sur_H)/sqrt(length(all_Em_sur_H)),
     mean(all_Tpu_H), std(all_Tpu_H)/sqrt(length(all_Tpu_H)), mean(all_Tpm_H), std(all_Tpm_H)/sqrt(length(all_Tpm_H)),
@@ -74,6 +83,7 @@ col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", 
                 "αii_sur", "αii_sur_err", "αij_sur", "αij_sur_err", "αij_d_sur", "αij_d_sur_err", "αij_upper_sur", "αij_upper_sur_err","αij_lower_sur", "αij_lower_sur_err",
                 "r", "r_err", "u", "u_err","m", "m_err", 
                 "RO", "RO_err", "ulO", "ulO_err", "estα", "estα_err",
+                "RO_sur", "RO_sur_err", "ulO_sur", "ulO_sur_err", "estα_sur", "estα_sur_err",
                 "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
                 "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err",
                 "eigen", "eigen_err", "stability",
@@ -81,31 +91,81 @@ col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", 
                 "Jac_diag", "Jac_diag_err", "radius", "radius_err", "sum_αij", "sum_αij_err"];
 Eff_results = DataFrame(Eff_results, col_names_EF);
 
-# CSV.write("../results/Eff_results_p0.csv", Eff_results, writeheader=false)
-# @save "../results/Feas_CR_dist_p0.jld2" all_Rrela_collect all_Crela_collect
-# @load "../results/Feas_CR_dist_p0.jld2" all_Rrela_collect all_Crela_collect
+
+#### ONLY collecting αii and αij 
+progress = Progress(length(path)*num_temps; desc="Progress running:")
+all_ii_collect = Vector{Vector{Float64}}(); all_ij_collect = Vector{Vector{Float64}}()
+@time for j in 1: num_temps
+    all_ℵii_H = Float64[]; all_ℵij_H = Union{Float64, Missing}[]; 
+    for i in 1:length(path)
+        @load path[i] all_ℵii all_ℵij 
+        append!(all_ℵii_H, all_ℵii[j]); append!(all_ℵij_H, all_ℵij[j]); 
+        next!(progress)
+    end 
+    push!(all_ii_collect, all_ℵii_H); push!(all_ij_collect, all_ℵij_H)
+end 
+
+f = Figure(fontsize = 35, size = (2000, 900));
+ax1 = Axis(f[1,1], xlabel = "α", ylabel = "frequency", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+hist!(ax1, vcat(all_ii_collect...), color = "#FA8328", bins = 100)
+hist!(ax1, vcat(all_ij_collect...), color = "#015845", bins = 100)
+f
+
+over_zero = Float64[]
+for i in 1:num_temps
+    push!(over_zero, sum(all_ii_collect[i].> 1.0e-7)/length(all_ii_collect[i]))
+end 
+plot(over_zero)
+
+##### Saving #######
+# CSV.write("../results/Eff_results_p_re.csv", Eff_results, writeheader=false)
+# @save "../results/Feas_CR_dist_p0.jld2" all_Rrela_collect all_Crela_collect all_ii_collect all_ij_collect
+
+
+##### Loading #######
+# Eff_results = CSV.read("../results/Eff_results_p_re.csv", DataFrame, header=false)
+# @load "../results/Feas_CR_dist_p_re.jld2" all_Rrela_collect all_Crela_collect all_ii_collect all_ij_collect
 
 
 temp = collect(Temp_rich .+273.15)
 
+temp_all_ii = vcat([repeat([Temp_rich[t]], length(all_ii_collect[t])) for t in 1:num_temps]...)
+temp_all_ij = vcat([repeat([Temp_rich[t]], length(all_ij_collect[t])) for t in 1:num_temps]...)
+
+allαii = vcat(all_ii_collect...)
+allαij = vcat(all_ij_collect...)
+
+scatter(temp_all_ii, allαii)
+scatter(temp_all_ij, allαij)
+
 all_temp_R = vcat([repeat([temp[t]], length(all_Rrela_collect[t])) for t in 1:num_temps]...)
 [mean(all_Rrela_collect[t]) for t in 1:num_temps]
-f = Figure(resolution = (1200, 1200));
-ax1 = Axis(f[1,1], xlabel = "Temperature", ylabel = "Resource distribution", ygridvisible = false, xgridvisible = false)
-scatter!(ax1,all_temp_R .- 273.15, vcat(all_Rrela_collect...), color = ("#285C93"), label = "", alpha = 0.7)
-
+f = Figure(fontsize = 35, size = (1200, 1200));
+ax1 = Axis(f[1,1], xlabel = "Temperature", ylabel = "Resource distribution", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
+# scatter!(ax1,all_temp_R .- 273.15, vcat(all_Rrela_collect...), color = ("#285C93"), label = "", alpha = 0.2)
+boxplot!(ax1, all_temp_R .- 273.15, vcat(all_Rrela_collect...))
 f
+save("../results/Feas_R_dist_p-1.png", f) 
+# println([mean(all_Rrela_collect[t]) for t in 1: num_temps] ,"\n")
 
 all_temp_C = vcat([repeat([temp[t]], length(all_Crela_collect[t])) for t in 1:num_temps]...)
-f = Figure(resolution = (1200, 1200));
-ax2 = Axis(f[1,1], xlabel = "Temperature", ylabel = "Consumer distribution", ygridvisible = false, xgridvisible = false)
-scatter!(ax2,all_temp_C .- 273.15, vcat(all_Crela_collect...), color = ("#285C93"), label = "", alpha = 0.7)
+f = Figure(fontsize = 35, size = (1200, 1200));
+ax2 = Axis(f[1,1], xlabel = "Temperature", ylabel = "Consumer distribution", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)
+# scatter!(ax2,all_temp_C .- 273.15, vcat(all_Crela_collect...), color = ("#285C93"), label = "", alpha = 0.7)
+boxplot!(ax2, all_temp_C .- 273.15, vcat(all_Crela_collect...))
 f
 
+# println([mean(all_Crela_collect[t]) for t in 1: num_temps] ,"\n")
+# save("../results/Feas_C_dist_p-1.png", f) 
 
-save("../results/Feas_R_dist_p0.png", f) 
+############## all_alphas ################
 
-f = Figure(resolution = (1200, 1200));
+
+
+
+############## stability ################
+
+f = Figure(size = (1200, 1200));
 for j in 1: num_temps
     # if (j-1) % 5 == 0
         circ_leading = Float64[]

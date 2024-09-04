@@ -14,9 +14,8 @@ end
 function randtemp_param(N, kw)
     @unpack T, ρ_t, Tr, Ed = kw
     k = 0.0000862 # Boltzman constant
-    # Here setting B0_u = m0 /(1 - L - CUE_0) = 0.2772
-    # with L = 0.3, mean(m0) = 0.132, CUE_0 = 0.22
-    B0 = [-0.8116 -1.4954]# Using CUE0 = 0.22, mean growth rate = 0.48
+    B0 = [-0.8116 -1.4954]# L = 0.3; mean(CUE0) = 0.22; median(CUE0) = 0.20
+    # B0 = [0.7612 -1.4954]# L = 0.7; mean(CUE0) = 0.22; median(CUE0) = 0.20
     B0_var = 0.17 .* abs.(B0); E_mean = [0.8146 0.5741]; E_var =  0.1364 .* E_mean
     cov_xy = ρ_t .* B0_var.^0.5 .* E_var .^ 0.5
     meanv = [B0 ; E_mean]

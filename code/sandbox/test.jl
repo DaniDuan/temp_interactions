@@ -194,3 +194,11 @@ end
 
 display(f1)
 display(f2)
+
+
+############# Define the color gradient from #376298 to #9A2B1A
+using Colors
+
+color_start = RGBA(parse(Colorant, "#376298"), 0.4)
+color_end = RGBA(parse(Colorant, "#9A2B1A"), 0.4)
+color_gradient = range(color_start, stop=color_end, length=length(all_ii_collect))

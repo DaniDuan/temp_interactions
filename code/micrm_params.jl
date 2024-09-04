@@ -40,7 +40,7 @@ function generate_params(N, M; f_m=def_m, f_ρ=def_ρ, f_ω=def_ω, f_u=def_u, f
     #         λ[i, α] = sum(l[i, α, :])
     #     end
     # end
-     λ = reshape(sum(l , dims = 3), N, M)
+    λ = reshape(sum(l , dims = 3), N, M)
 
      # resources
      ρ = f_ρ(N, M, kw)

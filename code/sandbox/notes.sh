@@ -43,5 +43,8 @@ scancel # job number
 # squeue reports the state of jobs or job steps. It has a wide variety of filtering, sorting, and formatting options. By default, it reports the running jobs in priority order and then the pending jobs in priority order.
 squeue
 
+# Checking server status
+watch sensors
+
 # adding in packages in Julia
 # Pkg.add(["Distributions", "LinearAlgebra", "DifferentialEquations", "Plots", "StatsPlots","Sundials","Parameters","CSV","DataFrames","CairoMakie","LsqFit","Logging","TOML"])

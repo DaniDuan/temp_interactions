@@ -56,7 +56,7 @@ for n in 1:10
     # lines!(ax1, Temp_rich, pred, color = ("#E17542", 1), linewidth = 1)
 end 
 
-@save "../results/20240814/inter_ij_0/fit_allij_0_$(index).jld2" fitted
+@save "../results/20240902/inter_ij_0/fit_allij_0_$(index).jld2" fitted
 # df_names = ["B0","E","Th","Ed","AIC","r2"]
 # fitted = DataFrame(fitted, df_names);
 # CSV.write("../results/αij_fitted-1.csv", fitted, writeheader=false)

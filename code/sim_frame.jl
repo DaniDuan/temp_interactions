@@ -50,7 +50,7 @@ function F_u(N, M, kw)
     if haskey(kw, :T)
         u_sum = kw[:tt][:,1]
     else 
-        u_sum = transpose(fill(2.5, M))
+        u_sum = fill(2.5, N)
     end
     diri = transpose(rand(Dirichlet(ones(M)),N))
     u = diri.*u_sum

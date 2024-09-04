@@ -14,7 +14,8 @@ cb = DiscreteCallback(condition, affect!)
 
 # niche_diff = ones(M, N) # 1000 for concentrating, 1.0 for uniform
 function fu_niche(N, M, niche_diff)
-    u_sum = fill(2.5, M)'
+    # u_sum = rand(Trancated(Normal(), 0, Inf))
+    u_sum = fill(2.5, N)
     diri = zeros(Float64, N, M)
     for i in 1:N
         diri[i,:] = rand(Dirichlet(niche_diff[:,i]),1)
@@ -79,7 +80,7 @@ prob_LV = ODEProblem(LV_dx!, Ci, tspan, p_lv)
 sol_LV = solve(prob_LV, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
 bm_LV = reshape(vcat(sol_LV.u...), N, length(sol_LV.u))'
 
-lines(1:size(bm_LV)[1], bm_LV[:,1])
+# lines(1:size(bm_LV)[1], bm_LV[:,1])
 
 
 f = Figure(fontsize = 35, size = (2000, 900));
@@ -94,7 +95,7 @@ l2 = [LineElement(color = ("#4F363E", 0.8), linestyle = nothing, linewidth = 3)]
 Legend(f[1,1], [l1], tellheight = false, tellwidth = false, ["MCM"], halign = :left, valign = :top)
 Legend(f[1,2], [l2], tellheight = false, tellwidth = false, ["ELV"], halign = :left, valign = :top)
 f
-save("../results/MCM_ELV_dynamics.png", f) 
+save("../results/MCM_ELV_dynamics.pdf", f) 
 
 
 
@@ -118,37 +119,83 @@ path_over = glob("over*", "../results/over03/")
 path_diff = glob("diff*", "../results/diff03/")
 path_uniform = glob("uniform*", "../results/uniform03/")
 
-all_alpha_over = Float64[]
+all_alpha_over = Float64[]; all_αii_over = Float64[]; all_αij_over = Float64[];
+all_upper_over = Float64[]; all_lower_over = Float64[];
 progress = Progress(length(path_over); desc="Progress running:")
 for index in 1: length(path_over)
     next!(progress)
     @load path_over[index] all_alpha
-    append!(all_alpha_over, all_alpha)
+    A = reshape(all_alpha, N, N)
+    αii = diag(A)
+    αij = [A[i, j] for i in 1:N for j in 1:N if i != j]
+    append!(all_alpha_over, all_alpha); append!(all_αii_over, αii);  append!(all_αij_over, αij);
+    append!(all_upper_over, uℵij); append!(all_lower_over, lℵij)
 end 
 
-all_alpha_diff = Float64[]
+all_alpha_diff = Float64[]; all_αii_diff = Float64[]; all_αij_diff = Float64[];
+all_upper_diff = Float64[]; all_lower_diff = Float64[];
+all_r_diff = Float64[]
 progress = Progress(length(path_diff); desc="Progress running:")
 for index in 1: length(path_diff)
     next!(progress)
     @load path_diff[index] all_alpha
-    append!(all_alpha_diff, all_alpha)
+    A = reshape(all_alpha, N, N)
+    αii = diag(A)
+    αij = [A[i, j] for i in 1:N for j in 1:N if i != j]
+    append!(all_alpha_diff, all_alpha); append!(all_αii_diff, αii);  append!(all_αij_diff, αij);
+    append!(all_upper_diff, uℵij); append!(all_lower_diff, lℵij); 
+
 end 
 
-all_alpha_uniform = Float64[]
+all_alpha_uniform = Float64[]; all_αii_uniform = Float64[]; all_αij_uniform = Float64[];
+all_upper_uniform = Float64[]; all_lower_uniform = Float64[];
 progress = Progress(length(path_uniform); desc="Progress running:")
 for index in 1: length(path_uniform)
     next!(progress)
-    @load path_uniform[index] all_alpha
-    append!(all_alpha_uniform, all_alpha)
+    @load path_uniform[index] all_alpha uℵij lℵij
+    A = reshape(all_alpha, N, N)
+    αii = diag(A)
+    αij = [A[i, j] for i in 1:N for j in 1:N if i != j]
+    append!(all_alpha_uniform, all_alpha); append!(all_αii_uniform, αii);  append!(all_αij_uniform, αij);
+    append!(all_upper_uniform, uℵij); append!(all_lower_uniform, lℵij)
 end 
 
-# High niche overlap; High niche differentiation
-f = Figure(fontsize = 35, size = (2000, 900));
-ax1 = Axis(f[1,1], title = "High niche differentiation", xlabel = "α", ylabel = "frequency", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-ax2 = Axis(f[1,2], title = "Uniformly distributed niche", xlabel = "α", ylabel = "frequency", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-ax3 = Axis(f[1,3], title = "High niche overlap", xlabel = "α", ylabel = "frequency", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-hist!(ax1, all_alpha_diff, color = "#C25E8B", bins = 100)
-hist!(ax2, all_alpha_uniform, color = "#82AC6D", bins = 100)
-hist!(ax3, all_alpha_over, color = "#5676A5", bins = 100)
+# High niche overlap; High niche differentiation #82AC6D; #C25E8B
+f = Figure(fontsize = 35, size = (2100, 900));
+ax1 = Axis(f[1,1], title = "High niche differentiation", xlabel = "α", ylabel = "frequency (αii)", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "", xlabelsize = 35, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+hist!(ax1, all_αii_diff, color = ("#FA8328", 0.7), bins = 100)
+hist!(ax2, all_αij_diff, color = ("#069F66", 0.7), bins = 100)
+linkxaxes!(ax1,ax2)
+ax3 = Axis(f[1,2], title = "Uniformly distributed niche", xlabel = "α", ylabel = "", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+ax4 = Axis(f[1,2], ylabel = "", xlabelsize = 35, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax4)
+hist!(ax3, all_αii_uniform, color = ("#FA8328", 0.7), bins = 100)
+hist!(ax4, all_αij_uniform, color = ("#069F66", 0.7), bins = 100)
+linkxaxes!(ax3,ax4)
+ax5 = Axis(f[1,3], title = "High niche overlap", xlabel = "α", ylabel = "", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+ax6 = Axis(f[1,3], ylabel = "frequency (αij)", xlabelsize = 35, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax6)
+hist!(ax5, all_αii_over, color = ("#FA8328", 0.5), bins = 100)
+hist!(ax6, all_αij_over, color = ("#069F66", 0.5), bins = 100)
+linkxaxes!(ax5,ax6)
+p1 = [PolyElement(color = ("#FA8328", 0.7), strokecolor = :transparent)]
+p2 = [PolyElement(color = ("#069F66", 0.7), strokecolor = :transparent)]
+Legend(f[1,1], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
+Legend(f[1,2], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
+Legend(f[1,3], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
 f
-save("../results/α_niche_03.png", f) 
+save("../results/α_niche_03.pdf", f) 
+
+
+##########################
+f = Figure(fontsize = 35, size = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "α", ylabel = "frequency (αii)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "frequency (αij)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hist!(ax1, all_αii_uniform, color = ("#FA8328", 0.7), bins = 100)
+hist!(ax2, all_αij_uniform, color = ("#069F66", 0.7), bins = 100)
+linkxaxes!(ax1,ax2)
+Legend(f[1,1], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
+f
+save("../results/α_uniform_03.png", f) 

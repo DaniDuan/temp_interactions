@@ -202,3 +202,60 @@ using Colors
 color_start = RGBA(parse(Colorant, "#376298"), 0.4)
 color_end = RGBA(parse(Colorant, "#9A2B1A"), 0.4)
 color_gradient = range(color_start, stop=color_end, length=length(all_ii_collect))
+
+
+A = [1 2 3 4; 4 5 6 6; 7 8 9 9; 1 3 3 5]
+
+idx = CartesianIndices(A)
+ind_list = collect(idx)
+ind_off = [ind_list[i,j] for i in 1:N for j in 1:N if i != j]
+A[ind_off[1]]
+
+
+
+##############
+progress = Progress(20* 6; desc="Progress running:")
+
+leading_eigens =  Vector{Vector{ComplexF64}}()
+for j in 1:20
+    all_leading = ComplexF64[]
+    for i in range(0, stop = 30, length = 6)
+        T = 273.15 + i
+        p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
+        ## run simulation
+        prob = ODEProblem(dxx!, x0, tspan, p)
+        sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+        p_lv = Eff_LV_params(p=p, sol=sol);
+        LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
+        jac_eigen = eigen(LV_jac).values
+        leading = jac_eigen[argmax(real.(jac_eigen))]
+        push!(all_leading, leading)
+        next!(progress)
+    end
+    push!(leading_eigens, all_leading)
+end
+R"library(beepr); beep(sound = 4, expr = NULL)"
+
+leading_eigens
+all_sta = Float64[]; all_leading_collect = Vector{Vector{ComplexF64}}()
+for j in 1: 6
+        circ_leading_H = ComplexF64[];
+        for i in 1:15
+            push!(circ_leading_H, leading_eigens[j])
+        end 
+    push!(all_sta, sum(real.(circ_leading_H) .< 0)/length(path)); push!(all_leading_collect, circ_leading_H)
+end 
+
+
+path = glob("Eff_iters*", "../data/Eff_p0_old/")
+all_circ = Vector{Vector{ComplexF64}}()
+for j in 1: num_temps
+    # if (j-1) % 5 == 0
+        circ_leading_H = ComplexF64[]
+        for i in 1:length(path)
+            @load path[i] all_leading diag_dominance
+            push!(circ_leading_H, all_leading[j])
+        end 
+    push!(all_circ, circ_leading_H)
+end 
+[sum(real.(all_circ[t]) .< 0) for t in 1:num_temps] ./ length(path)

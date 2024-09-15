@@ -1,7 +1,7 @@
 include("./sim_frame.jl");
 using ProgressMeter, RCall
 
-N=100
+N=50
 M=50
 ###################################
 # Generate MiCRM parameters
@@ -12,13 +12,13 @@ condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
 affect!(integrator) = terminate!(integrator)
 cb = DiscreteCallback(condition, affect!)
 
-# niche_diff = ones(M, N) # 1000 for concentrating, 1.0 for uniform
-function fu_niche(N, M, niche_diff)
-    # u_sum = rand(Trancated(Normal(), 0, Inf))
+function fu_niche(N, M, niche)
     u_sum = fill(2.5, N)
+    # u_sum = rand(truncated(Normal(1.58, 1), 0, Inf), N)'
+    # maximum(u_sum)
     diri = zeros(Float64, N, M)
     for i in 1:N
-        diri[i,:] = rand(Dirichlet(niche_diff[:,i]),1)
+        diri[i,:] = rand(Dirichlet(niche[:,i]),1)
     end
     # diri = rand(Dirichlet(ones(M)),N)'
     u = diri.*u_sum
@@ -39,12 +39,7 @@ end
 
 niche_over = fill(100.0, M, N)
 niche_rand = fill(1.0, M, N)
-L = fill(0.3, N)
 
-progress = Progress(200; desc="Progress running:")
-
-all_alpha_diff = Float64[]
-next!(progress)
 niche_diff = ones(M, N)
 rand_pos = randperm(M)
 rand_pos_2 = randperm(M)
@@ -60,25 +55,38 @@ end
 # u = fu_niche(N, M, niche_diff) # Completely differentiated 
 # u = fu_niche(N, M, niche_over) # Complete overlap
 u = fu_niche(N, M, niche_rand) # Uniform distribution
+# u = fill(2.5/M, N, M)
 m = fill(1, N)
+L = fill(0.3, N)
 l = fl(N, M, L)
 λ = reshape(sum(l , dims = 3), N, M)
 ρ = fill(1, M); ω = fill(0.0, M)
 p = (N=N, M=M, u = u, m= m, l = l, ρ =ρ, ω = ω, λ = λ)
-
 prob = ODEProblem(dxx!, x0, tspan, p)
-sol =solve(prob, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
+# sol =solve(prob, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
+# bm = sol.u[length(sol.t)][:, 1:N]
+# rbm = sol.u[length(sol.t)][:, N+1:N+M]
 
-sol_results = reshape(vcat(sol.u...), N+M, length(sol.u))'
-bm = sol_results[:, 1:N]
-rbm = sol_results[:, N+1:N+M]
+sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+bm = sol.u[length(sol.t)][1:N]
+rbm = sol.u[length(sol.t)][N+1:N+M]
+
 ######################### Running the Effective LV
 p_lv = Eff_LV_params(p=p, sol=sol);
 
 ## running LV
 prob_LV = ODEProblem(LV_dx!, Ci, tspan, p_lv)
-sol_LV = solve(prob_LV, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
-bm_LV = reshape(vcat(sol_LV.u...), N, length(sol_LV.u))'
+# sol_LV = solve(prob_LV, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
+# bm_LV = reshape(vcat(sol_LV.u...), N, length(sol_LV.u))'
+
+sol_LV = solve(prob_LV, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+bm_LV = sol_LV.u[length(sol_LV.t)]
+
+all_alpha = vcat(p_lv.ℵ...)
+uℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j > i]
+lℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j < i]
+
+r = p_lv.r
 
 # lines(1:size(bm_LV)[1], bm_LV[:,1])
 
@@ -98,7 +106,45 @@ f
 save("../results/MCM_ELV_dynamics.pdf", f) 
 
 
+################## heatmap ######################
+N = 100; M = 50
+niche_over = fill(100.0, M, N)
+niche_rand = fill(1.0, M, N)
 
+niche_diff = ones(M, N)
+rand_pos = randperm(M)
+rand_pos_2 = randperm(M)
+for i in 1:N 
+    if i <= M
+        i_con = rand_pos[i]
+    else 
+        i_con = rand_pos_2[i - M]
+    end 
+    niche_diff[i_con, i] = 100.0
+end 
+
+u_diff = fu_niche(N, M, niche_diff) # Completely differentiated 
+u_over = fu_niche(N, M, niche_over) # Complete overlap
+u_rand = fu_niche(N, M, niche_rand) # Uniform distribution
+
+
+# combined_data = [u_rand; u_over]  
+# color_limits = extrema(combined_data)
+f = Figure(fontsize = 35, size = (2100, 700));
+ax1 = Axis(f[1,1][1,1], title = "High niche differentiation", ygridvisible = false, xgridvisible = false, xlabelsize = 35, ylabelsize = 35)
+ax2 = Axis(f[1,2][1,1], title = "Uniformly distributed niche", ygridvisible = false, xgridvisible = false, xlabelsize = 35, ylabelsize = 35)
+ax3 = Axis(f[1,3][1,1], title = "High niche overlap", ygridvisible = false, xgridvisible = false, xlabelsize = 35, ylabelsize = 35)
+hm1 = heatmap!(ax1, u_diff, colormap = Reverse(:grayC))
+hm2 = heatmap!(ax2, u_rand, colormap = Reverse(:grayC)) # , colorrange = color_limits
+hm3 = heatmap!(ax3, u_over, colormap = Reverse(:grayC))
+ax1.xticks = ([], []); ax1.yticks = ([], [])
+ax2.xticks = ([], []); ax2.yticks = ([], [])
+ax3.xticks = ([], []); ax3.yticks = ([], [])
+Colorbar(f[1,1][1,2], hm1)  
+Colorbar(f[1,2][1,2], hm2)  
+Colorbar(f[1,3][1,2], hm3)  
+f
+save("../results/α_niche_u03.pdf", f) 
 
 
 ###### 

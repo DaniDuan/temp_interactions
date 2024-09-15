@@ -79,6 +79,20 @@ Label(f[1,1, TopLeft()], "(a)")
 f
 save("../results/CR0.pdf", f) 
 
+over_zero = [sum(all_ii_collect[t].> 1.0e-7)/length(all_ii_collect[t]) for t in 1:num_temps]
+f = Figure(fontsize = 35, size = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "Temperature", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "Positive αii", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+scatter!(ax1, Temp_rich, Eff_results.stability, color = "#6B8EDE", markersize = 15)
+scatter!(ax2, Temp_rich, over_zero, color = "#FA8328", markersize = 15)
+linkxaxes!(ax1,ax2)
+Label(f[1,1, TopLeft()], "(a)")
+s1 = [MarkerElement(color = "#6B8EDE", markersize = 12, marker = :circle)]
+s2 = [MarkerElement(color = "#FA8328", markersize = 12, marker = :circle)]
+Legend(f[1, 1], [s1, s2], tellheight = false, tellwidth = false, ["Stability", "Positive αii"], halign = :left, valign = :center, framevisible = true)
+f
+save("../results/sta0.pdf", f) 
 
 
 

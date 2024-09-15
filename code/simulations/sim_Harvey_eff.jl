@@ -6,6 +6,7 @@ L = 0.3
 ### Temp params 
 num_temps = 31
 ρ_t= [-0.3500 -0.3500]; # realistic covariance
+# ρ_t= [0.0000 0.0000]; 
 Tr=273.15+10; Ed=3.5 
 ###################################
 # Generate MiCRM parameters
@@ -22,23 +23,27 @@ index_str = ENV["SLURM_ARRAY_TASK_ID"]
 # Convert the string to a numeric value (e.g., Integer)
 index = parse(Int, index_str)
 
+# progress = Progress(num_temps; desc="Progress running:")
+
 all_ℵii = Vector{Vector{Float64}}(); all_ℵij = Vector{Vector{Float64}}(); all_ℵij_d = Vector{Vector{Float64}}(); all_uℵij = Vector{Vector{Float64}}(); all_lℵij = Vector{Vector{Float64}}();
 all_ℵii_sur =  Vector{Vector{Float64}}(); all_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_ℵij_d_sur =  Vector{Vector{Union{Float64, Missing}}}(); all_uℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_lℵij_sur = Vector{Vector{Union{Float64, Missing}}}();
 all_r = Vector{Vector{Float64}}(); all_r_sur = Vector{Vector{Float64}}();
-all_leading = Float64[]; all_diag = Vector{Vector{Float64}}();radi = Vector{Vector{Float64}}(); diag_dominance = Float64[];
+all_leading = ComplexF64[]; all_H_leading = ComplexF64[]; all_diag = Vector{Vector{Float64}}();radi = Vector{Vector{Float64}}(); diag_dominance = Float64[];
 all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}(); RO =  Vector{Vector{Float64}}(); ulO =  Vector{Vector{Float64}}(); Rul =  Vector{Vector{Float64}}(); 
 RO_sur = Vector{Vector{Union{Float64, Missing}}}(); ulO_sur = Vector{Vector{Union{Float64, Missing}}}(); Rul_sur = Vector{Vector{Union{Float64, Missing}}}(); 
 all_Eu =  Vector{Vector{Float64}}(); all_Em =  Vector{Vector{Float64}}(); all_Eu_sur = Vector{Vector{Float64}}(); all_Em_sur = Vector{Vector{Float64}}();
 all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); all_Tpu_sur = Vector{Vector{Float64}}(); all_Tpm_sur = Vector{Vector{Float64}}();
 all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); all_R =  Vector{Vector{Float64}}(); all_C = Vector{Vector{Float64}}();
+all_com_CUE = Float64[]
 
-@time for i in range(0, stop = 30, length = 31)
+for i in range(0, stop = 30, length = 31)
     T = 273.15 + i
+    # next!(progress)
 
     p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)
-    sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+    sol =solve(prob, AutoVern7(Rodas5()), save_everystep = true, callback=cb)
     bm = sol.u[length(sol.t)][1:N]
     sur = (1:N)[bm .> 1.0e-7]
     N_s = length(sur)
@@ -46,12 +51,17 @@ all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); al
     R_rela = R_t ./ sum(R_t)
     C_t = bm[bm .> 1.0e-7]
     C_rela = C_t ./ sum(C_t)
+
+    t_len = length(sol.t)
+    Rs = sum(x0[N+1:N+M] .+ t_len .- R_t)
+    Cs = sum(C_t) .- sum(x0[1:N])
+    community_CUE = Cs/Rs
     ## getting effective LV coefficients
     p_lv = Eff_LV_params(p=p, sol=sol);
     r = p_lv.r
     r_sur = r[sur]
-    # number of species with r>0 at equilibium 
-    N_sur = sum(p_lv.r .> 0)
+    # # number of species with r>0 at equilibium 
+    # N_sur = sum(p_lv.r .> 0)
     # mean uptake and respiration 
     m = p.m
     u = sum(p.u, dims =2)
@@ -70,7 +80,7 @@ all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); al
     ℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if i != j]
     ℵij_d = [p_lv.ℵ[i, j]/diag(p_lv.ℵ)[i] for i in 1:N for j in 1:N if i != j]
     uℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j > i]
-    lℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j < i]
+    lℵij = [p_lv.ℵ[j, i] for i in 1:N for j in 1:N if j > i]
     # Resource uptake and cross-feeding 
     u_all = mapslices(x -> x .* x0[1:N], p.u, dims=1) # getting the actual uptake
     R_over = 1 .- [bray_curtis_dissimilarity(u_all[i,:], u_all[j,:]) for i in 1:N for j in 1:N if j != i]
@@ -92,6 +102,11 @@ all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); al
     jac_diag = diag(LV_jac)
     jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
     diag_dom = sum(abs.(jac_diag) - jac_off .> 0)/N
+    ### reactivity # https://www.frontiersin.org/journals/ecology-and-evolution/articles/10.3389/fevo.2014.00021/full
+    LV_H = (LV_jac + LV_jac')./2
+    H_eigen = eigen(LV_H).values
+    H_leading = H_eigen[argmax(real.(H_eigen))]
+
     if N_s > 1
         u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
         u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
@@ -119,8 +134,9 @@ all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); al
         push!(RO_sur, R_over_sur); push!(ulO_sur, ul_over_sur); push!(Rul_sur, Rul_over_sur);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
-        push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t)
+        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t);
+        push!(all_com_CUE, community_CUE)
     else 
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
         push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, [missing]); push!(all_ℵij_d_sur, [missing]); push!(all_uℵij_sur, [missing]); push!(all_lℵij_sur, [missing]); 
@@ -129,11 +145,15 @@ all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); al
         push!(RO_sur, [missing]); push!(ulO_sur, [missing]); push!(Rul_sur, [missing]);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
-        push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t)
+        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t);
+        push!(all_com_CUE, community_CUE)
     end
 end 
 
-@save "../data/20240902/p_re/Eff_iters_re_$(index).jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_r_sur all_u all_m RO ulO Rul RO_sur ulO_sur Rul_sur all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance all_Rrela all_Crela all_R all_C
+# R"library(beepr); beep(sound = 4, expr = NULL)"
+
+
+@save "../data/20240915/p_re/Eff_iters_re_$(index).jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_r_sur all_u all_m RO ulO Rul RO_sur ulO_sur Rul_sur all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_H_leading all_diag radi diag_dominance all_Rrela all_Crela all_R all_C all_com_CUE
 
 # @load "../data/Eff_iter/Eff_iters1.jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r  all_u all_m RO ulO Rul all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_diag radi diag_dominance 

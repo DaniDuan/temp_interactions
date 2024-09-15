@@ -7,7 +7,7 @@ put sim_frame.jl code # throw in files to directory
 
 get sim_frame.jl # pull out files
 
-sbatch xxx.sh
+sbatch xxx.sh # running the bash file
 ###### the bash file #######
 
 #!/bin/bash

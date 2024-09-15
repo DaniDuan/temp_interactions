@@ -1,7 +1,7 @@
 include("./sim_frame.jl");
 using ProgressMeter, RCall
 
-N=100
+N=50
 M=50
 L = 0.3
 ### Temp params 
@@ -74,7 +74,29 @@ R"library(beepr); beep(sound = 4, expr = NULL)"
 #     all_ℵii_sur = all_ℵii_sur,  all_ℵij_sur = all_ℵij_sur, all_up_ℵij_sur = all_up_ℵij_sur, all_low_ℵij_sur = all_low_ℵij_sur, all_ℵij_sum_sur = all_ℵij_sum_sur, all_D_ℵij_sur = all_D_ℵij_sur);
 # Dnames = ("αii", "αij", "up_αij", "low_αij", "sum_αij", "up_low", "αii_sur", "αij_sur", "up_αij_sur", "low_αij_sur", "sum_αij_sur", "up_low_sur");
 
-@save "../data/1com0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+# @save "../data/1com_0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+@load "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur
+
+using ColorSchemes
+num_temps = 31
+cs = ColorScheme(range(colorant"#376298",colorant"#9A2B1A", length = num_temps))
+# cgrad(:balance, Temp_rich)
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = "log(|αij|)", ylabel = "log(|αji|)", xlabelsize = 50, ylabelsize = 50)
+for i in 1: 31
+    scatter!(ax, log.(abs.(all_up_ℵij[i])), log.(abs.(all_low_ℵij[i])), color = cs[i], markersize = 15, alpha = 0.1)
+end 
+Colorbar(f[1,2], colorrange = [0, num_temps], colormap = cs, label = "Temperature")
+Label(f[1,1, TopLeft()], "(b)")
+f
+save("../results/αijαji-1.pdf", f) 
+
+# i = 11
+# f = Figure(fontsize = 35, size = (1200, 900));
+# ax = Axis(f[1,1], xlabel = "log(|αij|)", ylabel = "log(|αji|)", xlabelsize = 50, ylabelsize = 50)
+# scatter!(ax, log.(abs.(all_up_ℵij[i])), log.(abs.(all_low_ℵij[i])), color = cs[i], markersize = 15, alpha = 0.1)
+# Colorbar(f[1,2], colorrange = [0, num_temps], colormap = cs, label = "Temperature")
+# f
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 k = 0.0000862

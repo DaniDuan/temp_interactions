@@ -12,10 +12,11 @@ function temp_trait(N, kw)
 end
 
 function randtemp_param(N, kw)
-    @unpack T, ρ_t, Tr, Ed = kw
-    k = 0.0000862 # Boltzman constant
-    B0 = [-0.8116 -1.4954]# L = 0.3; mean(CUE0) = 0.22; median(CUE0) = 0.20
-    # B0 = [0.7612 -1.4954]# L = 0.7; mean(CUE0) = 0.22; median(CUE0) = 0.20
+    @unpack L, T, ρ_t, Tr, Ed = kw
+    L_v = mean(L)
+    B0_m = -1.4954; B0_CUE = 0.1953 # median(CUE0)
+    B0_u = log(exp(B0_m) / (1 - L_v - B0_CUE))
+    B0 = [B0_u B0_m] 
     B0_var = 0.17 .* abs.(B0); E_mean = [0.8146 0.5741]; E_var =  0.1364 .* E_mean
     cov_xy = ρ_t .* B0_var.^0.5 .* E_var .^ 0.5
     meanv = [B0 ; E_mean]
@@ -25,7 +26,7 @@ function randtemp_param(N, kw)
     allm = rand(MvNormal(meanv[:,2], cov_m), N)
     B = [exp.(allu[1,:]) exp.(allm[1,:])]
     E = [allu[2,:] allm[2,:]]
-    
+
     Tpu = 273.15 .+ rand(Normal(35, 5), N)
     Tpm = Tpu .+ 3
     Tp = [Tpu Tpm]

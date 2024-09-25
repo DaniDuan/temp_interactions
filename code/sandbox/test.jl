@@ -259,3 +259,46 @@ for j in 1: num_temps
     push!(all_circ, circ_leading_H)
 end 
 [sum(real.(all_circ[t]) .< 0) for t in 1:num_temps] ./ length(path)
+
+
+using CairoMakie, LinearAlgebra, Random
+
+# Generate some random 2D data points
+Random.seed!(123)
+data = [randn(2) for _ in 1:100]
+x = [d[1] for d in data]
+y = [d[2] for d in data]
+
+# Calculate mean and covariance of the data
+mean_x, mean_y = mean(x), mean(y)
+cov_matrix = cov(hcat(x, y))
+
+# Get eigenvalues and eigenvectors of the covariance matrix
+eigen_vals, eigen_vecs = eigen(cov_matrix)
+
+# Length of the axes (scaling with confidence level, e.g., 2 standard deviations)
+axis_lengths = sqrt.(eigen_vals) * 2
+
+# Create the angle of the ellipse from the first eigenvector
+angle_ellipse = atan(eigen_vecs[2, 1], eigen_vecs[1, 1])
+
+# Function to generate ellipse points
+function ellipse_points(center, axis_lengths, angle_ellipse; n_points=100)
+    t = range(0, 2π, length=n_points)
+    ellipse = [axis_lengths[1] .* cos.(t), axis_lengths[2] .* sin.(t)]  # scale to eigenvalues
+    rotation_matrix = [cos(angle_ellipse) -sin(angle_ellipse); sin(angle_ellipse) cos(angle_ellipse)]
+    rotated_ellipse = rotation_matrix * ellipse
+    [rotated_ellipse[i] .+ center[i] for i in 1:2] # Center vector broadcasted across each column of the rotated ellipse
+end
+
+# Get the points of the ellipse
+ellipse_pts = ellipse_points([mean_x, mean_y], axis_lengths, angle_ellipse)
+
+# Create scatter plot and overlay the ellipse
+f = Figure(fontsize = 35, size = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = " ", ylabel = " ")
+scatter!(ax1, x, y, label="Data points")
+lines!(ax1, ellipse_pts[1], ellipse_pts[2], color=:red, linewidth=2, label="Distribution ellipse")
+axislegend()
+f
+# CairoMakie.save("scatter_with_ellipse.png")

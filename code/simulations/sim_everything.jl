@@ -2,6 +2,8 @@ include("./sim_frame.jl")
 
 N=100
 M=50
+L = fill(0.3, N)
+
 ### Temp params 
 ρ_t= [-0.3500, -0.3500]; # realistic covariance
 Tr=273.15+10; Ed=3.5

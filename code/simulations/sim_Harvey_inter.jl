@@ -2,7 +2,7 @@ include("./fitting.jl");
 # using ProgressMeter
 N=100
 M=50
-L = 0.3
+L = fill(0.3, N)
 ### Temp params 
 num_temps = 38
 Tr=273.15+10; Ed=3.5 

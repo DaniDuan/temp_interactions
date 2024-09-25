@@ -24,7 +24,7 @@ all_leading_collect = Vector{Vector{ComplexF64}}(); all_rich_collect = Vector{Ve
 @time for j in 1: 50
     all_leading_H = ComplexF64[]; all_rich_H = Float64[]
     for i in 1:length(path)
-        @load path[i] all_sur all_ℵ all_r all_leading all_diag_dom
+        @load path[i] all_sur all_leading
         append!(all_leading_H, all_leading[j]);
         append!(all_rich_H, length(all_sur[j]))
         next!(progress)
@@ -57,3 +57,5 @@ subgrid = GridLayout(f[1,2], tellheight = false)
 Colorbar(f[1,2], colorrange = [0.0, 1.5], colormap = cs, label = "σ")
 f
 save("../results/var_um_rich_sta.pdf", f) 
+
+# @load "../data/20240914/v_new/v_$(index).jld2" all_sur all_ℵ all_r all_leading all_diag_dom all_C all_R

@@ -5,13 +5,14 @@ def_ρ(N, M, kw) = ones(M)
 def_ω(N, M, kw) = ones(M)
 def_u(N, M, kw) = copy(rand(Distributions.Dirichlet(M, 1.0), N)')
 
-function def_l(N, M, kw)
+function def_l(N, M, L)
+    Random.seed!(6)
     l = zeros(N, M, M)
     ϕ = fill(1.0, M)
     dD = Dirichlet(ϕ[:])
     for i = 1:N
         for α = 1:M
-            l[i, α, :] = rand(dD) * kw[:L][i]
+            l[i, α, :] = rand(dD) * L[i]
         end
     end
     return l
@@ -30,9 +31,8 @@ function generate_params(N, M; f_m=def_m, f_ρ=def_ρ, f_ω=def_ω, f_u=def_u, f
      # Adding in the trade-off between growth and yield (0.1 to 0.7 for leakage & -2 to 4 for log(u_i))
      #  L = 0.1 .* log.(sum(u,dims = 2)) .+ 0.3
     # L = (log.(sum(u,dims = 2)) .+ 2) ./ 6 # -2 < min(log(u_i)), 4 > max(log(u_i)) 
-     L = fill(0.3, N)
-     push!(kw, :L => L)
-     l = f_l(N, M, kw)
+     
+     l = f_l(N, M, L)
 
     #  ## Calculating total leakage of consumers per resource
     # for i in 1:N

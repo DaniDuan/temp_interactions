@@ -1,6 +1,6 @@
 include("./sim_frame.jl");
 
-Eff_results = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 1:65]
+Eff_results = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 1:65]
 col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", "αij_upper", "αij_upper_err","αij_lower", "αij_lower_err",
                 "αii_sur", "αii_sur_err", "αij_sur", "αij_sur_err", "αij_d_sur", "αij_d_sur_err", "αij_upper_sur", "αij_upper_sur_err","αij_lower_sur", "αij_lower_sur_err",
                 "r", "r_err", "r_sur", "r_sur_err", 
@@ -13,7 +13,7 @@ col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", 
                 "diag_dom", "diag_dom_err",
                 "Jac_diag", "Jac_diag_err", "radius", "radius_err"];
 rename!(Eff_results, col_names_EF)
-@load "../results/Feas_CR_dist_p0_new.jld2" all_Rrela_collect all_Crela_collect all_R_collect all_C_collect all_ii_collect all_ij_collect all_ii_sur_collect all_ij_sur_collect all_r_collect all_r_sur_collect
+@load "../results/Feas_CR_dist_p-1_new.jld2" all_Rrela_collect all_Crela_collect all_R_collect all_C_collect all_ii_collect all_ij_collect all_ii_sur_collect all_ij_sur_collect all_r_collect all_r_sur_collect
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
 temp = collect(Temp_rich .+ 273.15)
@@ -54,14 +54,17 @@ lines!(ax2, Temp_rich, meanR, color =( "#F8BA17", 0.9), linewidth = 5, label = "
 band!(ax2, Temp_rich, meanR .- R_err , meanR .+ R_err , color = ("#F8BA17", 0.5))
 # lines!(ax3, Temp_rich, Eff_results.estα, color = ("#9A2B1A",0.7), linewidth = 5, label = "")
 # band!(ax3, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#9A2B1A", 0.5))
-linkxaxes!(ax1,ax2, ax3)
+linkxaxes!(ax1,ax2)
+lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+text!(ax1, 0, 1.05, text = "↑ αᵢⱼ > αᵢᵢ", align = (:left, :center),fontsize = 30)
+text!(ax1, 0, 0.95, text = "↓ αᵢⱼ < αᵢᵢ", align = (:left, :center),fontsize = 30)
 l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
 # l2 = [LineElement(color = ("#9A2B1A", 0.7), linestyle = nothing, linewidth = 5)]
 l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
 Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
-# Label(f[1,1, TopLeft()], "(a)")
+Label(f[1,1, TopLeft()], "(b)")
 f
-save("../results/αR0.pdf", f) 
+save("../results/αR-1.pdf", f) 
 
 f = Figure(fontsize = 35, size = (1200, 900));
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
@@ -173,14 +176,14 @@ f = Figure(fontsize = 35, size = (1200, 900));
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αij/αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
 ax2 = Axis(f[1,1], ylabel = "Pairwise Interaction", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 hidespines!(ax2)
-lines!(ax1, Temp_rich, Eff_results.αij_d, color = ("#376298",0.8), linewidth = 5, label = "")
-band!(ax1, Temp_rich, Eff_results.αij_d .- Eff_results.αij_d_err , Eff_results.αij_d.+ Eff_results.αij_d_err, color = ("#376298", 0.3))
-lines!(ax2, Temp_rich, Eff_results.estα, color = ("#9A2B1A",0.7), linewidth = 5, label = "")
-band!(ax2, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#9A2B1A", 0.3))
-l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
-l2 = [LineElement(color = ("#9A2B1A", 0.7), linestyle = nothing, linewidth = 5)]
+lines!(ax1, Temp_rich, Eff_results.αij_d_sur, color = ("#0758AE",0.8), linewidth = 5, label = "")
+band!(ax1, Temp_rich, Eff_results.αij_d_sur .- Eff_results.αij_d_sur_err , Eff_results.αij_d_sur.+ Eff_results.αij_d_sur_err, color = ("#0758AE", 0.3))
+lines!(ax2, Temp_rich, Eff_results.estα_sur, color = ("#4F363E",0.8), linewidth = 5, label = "")
+band!(ax2, Temp_rich, Eff_results.estα_sur .- Eff_results.estα_sur_err , Eff_results.estα_sur .+ Eff_results.estα_sur_err , color = ("#4F363E", 0.3))
+l1 = [LineElement(color = ("#0758AE", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#4F363E", 0.8), linestyle = nothing, linewidth = 5)]
 Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "ƒc-ƒo"], halign = :center, valign = :top)
-Label(f[1,1, TopLeft()], "(a)")
+Label(f[1,1, TopLeft()], "(c)")
 f
 save("../results/CR_α0.pdf", f) 
 
@@ -245,3 +248,25 @@ linkxaxes!(ax1,ax2)
 # Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
 # Label(f[1,1, TopLeft()], "(a)")
 f
+
+
+
+##############################
+N=100
+M=50
+L = fill(0.3, N)
+### Temp params 
+num_temps = 31
+# ρ_t= [-0.3500 -0.3500]; # realistic covariance
+ρ_t= [0.0000 0.0000]; 
+Tr=273.15+10; Ed=3.5 
+###################################
+# Generate MiCRM parameters
+tspan = (0.0, 2.5e10)
+x0 = vcat(fill(0.1, N), fill(1, M)) 
+# here we define a callback that terminates integration as soon as system reaches steady state
+# condition(du, t, integrator) = norm(integrator(t, Val{1})) <= eps()
+condition(du, t, integrator) = norm(integrator(t, Val{1})[N:N+M]) <= eps()
+affect!(integrator) = terminate!(integrator)
+cb = DiscreteCallback(condition, affect!)
+

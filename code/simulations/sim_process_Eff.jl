@@ -1,6 +1,7 @@
 include("./sim_frame.jl")
 using ProgressMeter, RCall
 using Glob
+using ColorSchemes
 path = glob("Eff_iters*", "../data/Eff_p-1_new/")
 # path = glob("Eff_iters*", "../data/L07/p-1/")
 
@@ -548,7 +549,6 @@ f
 save("../results/sta_diag_dom.pdf", f) 
 
 ##########
-
 path_0 = glob("Eff_iters*", "../data/Eff_p0_new/")
 progress = Progress(length(path_0)*num_temps; desc="Progress running:")
 num_temps = 31
@@ -633,7 +633,7 @@ temp = hcat([repeat([Temp_rich[t]], length(all_circ[t])) for t in 1:num_temps]..
 
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Leading Eigen (real)", xlabelsize = 50, ylabelsize = 50)
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Real λᴶₘ ", xlabelsize = 50, ylabelsize = 50)
 for t in 1:num_temps
     scatter!(ax, temp[:,t], real.(all_circ[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
 end
@@ -654,42 +654,231 @@ for j in 1: num_temps
     push!(all_sta, sum(real.(circ_leading_H) .< 0)/length(path)); push!(all_leading_collect, circ_leading_H)
 end 
 
+########### Reactivity ############# 
+path = glob("Eff_iters*", "../data/Eff_p-1_ri/")
+all_leadH = Vector{Vector{Float64}}(); all_circ = Vector{Vector{ComplexF64}}()
+for j in 1: num_temps
+    # if (j-1) % 5 == 0
+    all_leadH_H = Float64[]; circ_leading_H = ComplexF64[]
+        for i in 1:length(path)
+            @load path[i] all_H_leading all_leading
+            push!(all_leadH_H, all_H_leading[j]); push!(circ_leading_H, all_leading[j])
+        end 
+    # end 
+    push!(all_leadH, all_leadH_H); push!(all_circ, circ_leading_H)
+end 
+# plot([sum(all_leadH[t] .>0)./length(path) for t in 1:num_temps],[sum(real.(all_circ[t]) .<0)./length(path) for t in 1:num_temps])
+
+# plot(real.(vcat(all_circ...)),vcat(all_leadH...))
+
+temp = hcat([repeat([Temp_rich[t]], length(all_leadH[t])) for t in 1:num_temps]...)
+
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "λᴴₘ", xlabelsize = 50, ylabelsize = 50)
+for t in 1:num_temps
+    scatter!(ax, temp[:,t], real.(all_leadH[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+end
+lines!(ax, [0, 30], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+Label(f[1,1, TopLeft()], "(a)")
+f
+save("../results/reac_T0.pdf", f) 
+
+# cs = ColorScheme(range(colorant"#376298",colorant"#9A2B1A", length = num_temps))
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = "Real λᴶₘ ", ylabel = "λᴴₘ", xlabelsize = 50, ylabelsize = 50)
+# for i in 1: 31
+#     scatter!(ax, real.(all_circ[i]), real.(all_leadH[i]), color = cs[i], markersize = 10, alpha = 0.05)
+# end 
+scatter!(ax, real.(vcat(all_circ...)), vcat(all_leadH...), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+lines!(ax, [ minimum(real.(vcat(all_circ...))), maximum(real.(vcat(all_circ...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+lines!(ax, [0,0], [minimum( vcat(all_leadH...)), maximum( vcat(all_leadH...))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+# Colorbar(f[1,2], colorrange = [0, num_temps], colormap = cs, label = "Temperature")
+Label(f[1,1, TopLeft()], "(b)")
+f
+save("../results/sta_reac0.pdf", f) 
+
 
 
 ######## Community level CUE ###########
 
-path = glob("Eff_iters*", "../data/Eff_p0_ri/")
-all_com_CUE_collect = Vector{Vector{Float64}}()
+path = glob("Eff_iters*", "../data/Eff_p_re_ri/")
+all_com_CUE_collect_re = Vector{Vector{Float64}}()
 for j in 1: num_temps
     all_com_CUE_H = Float64[];
         for i in 1:length(path)
             @load path[i] all_com_CUE
             push!(all_com_CUE_H, all_com_CUE[j])
         end 
-    push!(all_com_CUE_collect, all_com_CUE_H)
+    push!(all_com_CUE_collect_re, all_com_CUE_H)
+end 
+com_CUE_0 = [mean(all_com_CUE_collect_0[t]) for t in 1:num_temps]
+com_CUE_err_0 = [std(all_com_CUE_collect_0[t])/sqrt(length(all_com_CUE_collect_0[t])) for t in 1: num_temps]
+com_CUE_1 = [mean(all_com_CUE_collect_1[t]) for t in 1:num_temps]
+com_CUE_err_1 = [std(all_com_CUE_collect_1[t])/sqrt(length(all_com_CUE_collect_1[t])) for t in 1: num_temps]
+com_CUE_re = [mean(all_com_CUE_collect_re[t]) for t in 1:num_temps]
+com_CUE_err_re = [std(all_com_CUE_collect_re[t])/sqrt(length(all_com_CUE_collect_re[t])) for t in 1: num_temps]
+
+
+f = Figure(fontsize = 35, size = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Community-level CUE", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+lines!(ax1, Temp_rich, com_CUE_0, color = ("#EF8F8C",0.8), linewidth = 5, label = "ρ = 0")
+band!(ax1, Temp_rich, com_CUE_0 .- com_CUE_err_0, com_CUE_0 .+ com_CUE_err_0, color = ("#EF8F8C", 0.3))
+lines!(ax1, Temp_rich, com_CUE_re, color = ("#376298",0.8), linewidth = 5, label = "Realistic ρ")
+band!(ax1, Temp_rich, com_CUE_re .- com_CUE_err_re, com_CUE_0 .+ com_CUE_err_re, color = ("#376298", 0.3))
+lines!(ax1, Temp_rich, com_CUE_1, color = ("#4F363E",0.8), linewidth = 5, label = "ρ = -1")
+band!(ax1, Temp_rich, com_CUE_1 .- com_CUE_err_1, com_CUE_1 .+ com_CUE_err_1, color = ("#4F363E", 0.3))
+axislegend(position = :rt)
+# Label(f[1,1, TopLeft()], "(a)")
+f
+save("../results/com_CUE.pdf", f) 
+
+###################################
+path = glob("Eff_iters*", "../data/Eff_p0_new/")
+progress = Progress(length(path)*num_temps; desc="Progress running:")
+num_temps = 31
+all_ii_collect = Vector{Vector{Float64}}(); all_ij_collect = Vector{Vector{Float64}}()
+@time for j in 1: num_temps
+    all_ii_H = Float64[]; all_ij_H = Float64[]
+    for i in 1:length(path)
+        @load path[i]  all_ℵii all_ℵij #all_ℵii_sur
+        append!(all_ii_H, all_ℵii[j]); append!(all_ij_H, all_ℵij[j])
+        next!(progress)
+    end 
+    push!(all_ii_collect, all_ii_H); push!(all_ij_collect, all_ij_H)
 end 
 
-com_CUE_0 = [mean(all_com_CUE_collect[t]) for t in 1:num_temps]
-com_CUE_err_0 = [std(all_com_CUE_collect[t])/sqrt(length(all_com_CUE_collect[t])) for t in 1: num_temps]
-f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Community-level CUE", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-lines!(ax1, Temp_rich, com_CUE_0, color = ("#EF8F8C",0.8), linewidth = 5, label = "")
-band!(ax1, Temp_rich, com_CUE_0 .- com_CUE_err_0, com_CUE_0 .+ com_CUE_err_0, color = ("#EF8F8C", 0.3))
-axislegend(position = :rb)
-Label(f[1,1, TopLeft()], "(a)")
-f
-save("../results/com_CUE_0.pdf", f) 
+temp_ii = [repeat([Temp_rich[t]], length(all_ii_collect[t])) for t in 1:31]
+temp_ij = [repeat([Temp_rich[t]], length(all_ij_collect[t])) for t in 1:31]
 
-com_CUE_1 = [mean(all_com_CUE_collect[t]) for t in 1:num_temps]
-com_CUE_err_1 = [std(all_com_CUE_collect[t])/sqrt(length(all_com_CUE_collect[t])) for t in 1: num_temps]
 f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Community-level CUE", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-lines!(ax1, Temp_rich, com_CUE_1, color = ("#EF8F8C",0.8), linewidth = 5, label = "")
-band!(ax1, Temp_rich, com_CUE_1 .- com_CUE_err_1, com_CUE_1 .+ com_CUE_err_1, color = ("#EF8F8C", 0.3))
-axislegend(position = :rb)
+ax = Axis(f[1,1], xlabel = "Temperature ", ylabel = "α", xlabelsize = 50, ylabelsize = 50)
+# for i in 1: 31
+#     scatter!(ax, real.(all_circ[i]), real.(all_leadH[i]), color = cs[i], markersize = 10, alpha = 0.05)
+# end 
+boxplot!(ax, vcat(temp_ii...), log.(abs.(vcat(all_ii_collect...))), color = ("#FA8328", 0.7), label = "αᵢᵢ") 
+boxplot!(ax, vcat(temp_ij...), log.(abs.(vcat(all_ij_collect...))), color = ("#069F66", 0.7), label = "αᵢⱼ") 
+# lines!(ax, [ minimum(real.(vcat(all_circ...))), maximum(real.(vcat(all_circ...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+# lines!(ax, [0,0], [minimum( vcat(all_leadH...)), maximum( vcat(all_leadH...))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+# # Colorbar(f[1,2], colorrange = [0, num_temps], colormap = cs, label = "Temperature")
+# Label(f[1,1, TopLeft()], "(b)")
+axislegend(position = :lt)
+f
+save("../results/ijii0.pdf", f) 
+
+
+RO0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 29]
+RO0_err = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 30]
+RO1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 29]
+RO1_err = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 29]
+
+
+f = Figure(fontsize = 35, size = (1500, 900));
+ax1 = Axis(f[1,1], title = "Minimum Overlap", xlabel = "α", ylabel = "frequency (αii)", xlabelsize = 25, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "", xlabelsize = 25, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+hist!(ax1, all_ii_collect[argmin(RO0)], color = ("#FA8328", 0.7), bins = 100)
+hist!(ax2, all_ij_collect[argmin(RO0)], color = ("#069F66", 0.7), bins = 100)
+linkxaxes!(ax1,ax2)
+ax3 = Axis(f[1,2], title = "Maximum Overlap", xlabel = "α", ylabel = "", xlabelsize = 25, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+ax4 = Axis(f[1,2], ylabel = "", xlabelsize = 25, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax4)
+hist!(ax3, all_ii_collect[argmax(RO0)], color = ("#FA8328", 0.7), bins = 100)
+hist!(ax4, all_ij_collect[argmax(RO0)], color = ("#069F66", 0.7), bins = 100)
+linkxaxes!(ax3,ax4)
+p1 = [PolyElement(color = ("#FA8328", 0.7), strokecolor = :transparent)]
+p2 = [PolyElement(color = ("#069F66", 0.7), strokecolor = :transparent)]
+Legend(f[1,1], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
+Legend(f[1,2], [p1, p2], tellheight = false, tellwidth = false, ["αii", "αij"], halign = :left, valign = :top)
+f
+
+std(all_ii_collect[argmin(RO0)])
+std(all_ij_collect[argmin(RO0)])
+std(all_ii_collect[argmax(RO0)])
+std(all_ij_collect[argmax(RO0)])
+
+#########################
+path = glob("Eff_iters*", "../data/Eff_p0_cos/")
+progress = Progress(length(path)*num_temps; desc="Progress running:")
+num_temps = 31
+all_RO_collect = Vector{Vector{Float64}}(); all_ulO_collect = Vector{Vector{Float64}}(); all_Rul_collect = Vector{Vector{Float64}}()
+@time for j in 1: num_temps
+    all_RO_H = Float64[]; all_ulO_H = Float64[]; all_Rul_H = Float64[]
+    for i in 1:length(path)
+        @load path[i] RO ulO Rul 
+        append!(all_RO_H, RO[j]); append!(all_ulO_H, ulO[j]); append!(all_Rul_H, Rul[j])
+        next!(progress)
+    end 
+    push!(all_RO_collect, all_RO_H); push!(all_ulO_collect, all_ulO_H); push!(all_Rul_collect, all_Rul_H)
+end 
+RO_0 = [mean(all_RO_collect[t]) for t in 1:num_temps]
+RO_err_0 = [std(all_RO_collect[t])/sqrt(length(all_RO_collect[t])) for t in 1: num_temps]
+ulO_0 = [mean(all_ulO_collect[t]) for t in 1:num_temps]
+
+path = glob("Eff_iters*", "../data/Eff_p0_new/")
+progress = Progress(length(path)*num_temps; desc="Progress running:")
+num_temps = 31
+all_Eu_collect = Vector{Vector{Float64}}()
+@time for j in 1: num_temps
+    all_Eu_H = Float64[]
+    for i in 1:length(path)
+        @load path[i] all_Eu
+        pair_E = [all_Eu[j][i] + all_Eu[j][s] for i in 1:N for s in 1:N]
+        append!(all_Eu_H, pair_E)
+        next!(progress)
+    end 
+    push!(all_Eu_collect, all_Eu_H)
+end 
+
+hist(vcat(all_Eu_collect...))
+all_Eu_c = vcat(all_Eu_collect...)
+
+########### 
+path = glob("Eff_iters*", "../data/Eff_p-1_new/")
+progress = Progress(length(path)*num_temps; desc="Progress running:")
+num_temps = 31
+dℵij_collect = Vector{Vector{Float64}}() ; all_R_collect = Vector{Vector{Float64}}()
+# all_αijii_collect = Vector{Vector{Float64}}()
+idx = collect(CartesianIndices(zeros(Float64, N, N)))
+ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+@time for j in 1: num_temps
+    dℵij_H = Float64[]; all_R_H = Float64[]
+    for i in 1:length(path)
+        @load path[i]  all_ℵii all_ℵij all_R
+        A = zeros(Float64, N, N)
+        A[ind_off] = all_ℵij[j]
+        A[diagind(A)] = all_ℵii[j]
+        dℵij = [A[i, j]/A[j, j] for i in 1:N for j in 1:N if j != i]
+        append!(dℵij_H, dℵij); append!(all_R_H, all_R[j])
+        next!(progress)
+    end 
+    push!(dℵij_collect, dℵij_H); push!(all_R_collect, all_R_H)
+end 
+R"library(beepr); beep(sound = 4, expr = NULL)"
+
+αij_d = [mean(dℵij_collect[t]) for t in 1:num_temps]
+αij_d_err = [std(dℵij_collect[t])/sqrt(length(dℵij_collect[t])) for t in 1: num_temps]
+meanR = [mean(all_R_collect[t]) for t in 1:num_temps]
+R_err = [std(all_R_collect[t])/sqrt(length(all_R_collect[t])) for t in 1: num_temps]
+
+f = Figure(fontsize = 35, size = (1200, 900));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αji/αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
+lines!(ax1, Temp_rich, αij_d, color = ("#376298",0.8), linewidth = 5, label = "")
+band!(ax1, Temp_rich, αij_d .- αij_d_err , αij_d.+ αij_d_err, color = ("#376298", 0.3))
+lines!(ax2, Temp_rich, meanR, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
+band!(ax2, Temp_rich, meanR .- R_err , meanR .+ R_err , color = ("#F8BA17", 0.5))
+linkxaxes!(ax1,ax2)
+lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+text!(ax1, 0, 1.05, text = "↑ αⱼᵢ > αᵢᵢ", align = (:left, :center),fontsize = 30)
+text!(ax1, 0, 0.95, text = "↓ αⱼᵢ < αᵢᵢ", align = (:left, :center),fontsize = 30)
+l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,1, TopLeft()], "(b)")
 f
-save("../results/com_CUE-1.pdf", f) 
+save("../results/αR-1_ji.pdf", f) 
 
 
 

@@ -3,7 +3,7 @@ using Plots
 
 N=100
 M=50
-L = 0.3
+L = fill(0.3, N)
 ### Temp params 
 # T=15+273.15; 
 ρ_t= [-0.3500 -0.3500]; # realistic covariance

@@ -51,6 +51,7 @@ for i in 1:N
     end 
     niche_diff[i_con, i] = 100.0
 end 
+niche_all =(niche_over, niche_rand, niche_diff)
 
 # u = fu_niche(N, M, niche_diff) # Completely differentiated 
 # u = fu_niche(N, M, niche_over) # Complete overlap
@@ -89,7 +90,6 @@ lℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j < i]
 r = p_lv.r
 
 # lines(1:size(bm_LV)[1], bm_LV[:,1])
-
 
 f = Figure(fontsize = 35, size = (2000, 900));
 ax1 = Axis(f[1,1], xlabel = "Time", ylabel = "Consumer Abundance", xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false)

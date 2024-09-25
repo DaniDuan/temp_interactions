@@ -47,12 +47,16 @@ function F_ω(N, M, kw)
 end
 
 function F_u(N, M, kw)
+    @unpack niche = kw
     if haskey(kw, :T)
         u_sum = kw[:tt][:,1]
     else 
         u_sum = fill(2.5, N)
     end
-    diri = transpose(rand(Dirichlet(ones(M)),N))
+    diri = zeros(Float64, N, M)
+    for i in 1:N
+        diri[i,:] = rand(Dirichlet(niche[:,i]),1)
+    end
     u = diri.*u_sum
     return u
 end

@@ -3,6 +3,7 @@ include("./sim_frame.jl");
 N=100
 M=50
 tspan = (0.0, 1.5e8)
+L = fill(0.3, N)
 x0 = vcat(fill(0.1, N), fill(1, M))
 # here we define a callback that terminates integration as soon as system reaches steady state
 condition(du, t, integrator) = norm(integrator(t, Val{1})[N:N+M]) <= eps()

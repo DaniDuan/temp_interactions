@@ -29,7 +29,8 @@ all_ℵii_sur = Vector{Vector{Float64}}(); all_ℵij_sur = Vector{Vector{Union{F
 all_up_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_low_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); 
 all_ℵij_sum_sur = Vector{Vector{Union{Float64, Missing}}}(); all_D_ℵij_sur =  Vector{Vector{Union{Float64, Missing}}}();
 all_R_over = Vector{Vector{Float64}}(); all_ul_over = Vector{Vector{Float64}}(); all_Rul_over = Vector{Vector{Float64}}();
-all_R_over_sur = Vector{Vector{Union{Float64, Missing}}}(); all_ul_over_sur = Vector{Vector{Union{Float64, Missing}}}()
+all_R_over_sur = Vector{Vector{Union{Float64, Missing}}}(); all_ul_over_sur = Vector{Vector{Union{Float64, Missing}}}();
+all_r = Vector{Vector{Float64}}(); all_r_sur = Vector{Vector{Float64}}()
 progress = Progress(num_temps; desc="Progress running:")
 for i in range(0, stop = num_temps-1, length = num_temps)
     T = 273.15 + i
@@ -42,8 +43,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
     sur = (1:N)[bm .> 1.0e-7]
     
     u_all = mapslices(x -> x .* x0[1:N], p.u, dims=1) # getting the actual uptake
-    # R_over = 1 .- [bray_curtis_dissimilarity(u_all[i,:], u_all[j,:]) for i in 1:N for j in 1:N if j != i]
-    R_over = [Jaccard_Index(u_all[i,:], u_all[j,:]) for i in 1:N for j in 1:N if j != i]
+    R_over = 1 .- [bray_curtis_dissimilarity(u_all[i,:], u_all[j,:]) for i in 1:N for j in 1:N if j != i]
     # R_over = 1 ./(1 .+ R_eu) #; mean(R_over)
     ul = zeros(Float64, N, M)
     for s in 1: N
@@ -53,8 +53,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
         end 
         ul[s,:] = sum(uli, dims = 1)
     end 
-    ul_over = [Jaccard_Index(u_all[i,:], ul[j,:]) for i in 1:N for j in 1:N if j != i]
-    # ul_over = 1 .- [bray_curtis_dissimilarity(u_all[i,:], ul[j,:]) for i in 1:N for j in 1:N if j != i]
+    ul_over = 1 .- [bray_curtis_dissimilarity(u_all[i,:], ul[j,:]) for i in 1:N for j in 1:N if j != i]
     Rul_over = ul_over - R_over
     mean(Rul_over)
     sur = (1:N)[bm .> 1.0e-7]
@@ -73,9 +72,11 @@ for i in range(0, stop = num_temps-1, length = num_temps)
     up_ℵij = [ℵ[i,j] for i in 1:N for j in 1:N if i > j]
     low_ℵij = [ℵ[i,j] for i in 1:N for j in 1:N if i < j]
     D_ℵij = up_ℵij./low_ℵij
+    r = p_lv.r
 
     sur_ℵ = ℵ[sur, sur]
     ℵii_sur = diag(sur_ℵ)
+    sur_r = r[sur]
     if N_s > 1
         ℵij_sum_sur = vec(sum(sur_ℵ, dims = 2).- diag(sur_ℵ))
         ℵij_sur = [sur_ℵ[i,j] for i in 1:N_s for j in 1:N_s if i != j]
@@ -85,7 +86,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
 
         u_tR = mapslices(x -> x .* R_t, u_sur, dims=2) # getting the actual uptake
         u_t = mapslices(x -> x .* C_t, u_tR, dims=1) # getting the actual uptake
-        R_over_sur = 1 ./ (1 .+ [euclidean_distance(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i])
+        R_over_sur =  1 .- [bray_curtis_dissimilarity(u_t[i,:], u_t[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
         l_t = p.l[sur,:,:]
         ul_sur = zeros(Float64, N_s, M)
         for s in 1: N_s
@@ -95,7 +96,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
                 end 
                 ul_sur[s,:] = sum(uli, dims = 1)
         end 
-        ul_over_sur = 1 ./ (1 .+ [euclidean_distance(u_t[i,:], ul_sur[j,:]) for i in 1:N_s for j in 1:N_s if j != i])
+        ul_over_sur = 1 .- [bray_curtis_dissimilarity(u_t[i,:], ul_sur[j,:]) for i in 1:N_s for j in 1:N_s if j != i]
         # Rul_over_sur = ul_over_sur - R_over_sur
 
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_up_ℵij, up_ℵij); push!(all_low_ℵij, low_ℵij); 
@@ -103,7 +104,8 @@ for i in range(0, stop = num_temps-1, length = num_temps)
         push!(all_ℵii_sur, ℵii_sur); push!(all_ℵij_sur, ℵij_sur); push!(all_up_ℵij_sur, up_ℵij_sur); push!(all_low_ℵij_sur, low_ℵij_sur); 
         push!(all_ℵij_sum_sur, ℵij_sum_sur); push!(all_D_ℵij_sur, D_ℵij_sur);
         push!(all_R_over, R_over); push!(all_ul_over, ul_over); push!(all_Rul_over, Rul_over);
-        push!(all_R_over_sur, R_over_sur); push!(all_ul_over_sur, ul_over_sur ); 
+        push!(all_R_over_sur, R_over_sur); push!(all_ul_over_sur, ul_over_sur); 
+        push!(all_r, r); push!(all_r_sur, sur_r)
     else 
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_up_ℵij, up_ℵij); push!(all_low_ℵij, low_ℵij); 
         push!(all_ℵij_sum, ℵij_sum); push!(all_D_ℵij, D_ℵij);
@@ -111,6 +113,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
         push!(all_ℵij_sum_sur, [missing]); push!(all_D_ℵij_sur, [missing]);
         push!(all_R_over, R_over); push!(all_ul_over, ul_over); push!(all_Rul_over, Rul_over);
         push!(all_R_over_sur, [missing]); push!(all_ul_over_sur, [missing]); 
+        push!(all_r, r); push!(all_r_sur, sur_r)
     end
     next!(progress)
 end 
@@ -122,9 +125,11 @@ R"library(beepr); beep(sound = 4, expr = NULL)"
 #     all_ℵii_sur = all_ℵii_sur,  all_ℵij_sur = all_ℵij_sur, all_up_ℵij_sur = all_up_ℵij_sur, all_low_ℵij_sur = all_low_ℵij_sur, all_ℵij_sum_sur = all_ℵij_sum_sur, all_D_ℵij_sur = all_D_ℵij_sur);
 # Dnames = ("αii", "αij", "up_αij", "low_αij", "sum_αij", "up_low", "αii_sur", "αij_sur", "up_αij_sur", "low_αij_sur", "sum_αij_sur", "up_low_sur");
 
-@save "../data/1com0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur all_R_over all_ul_over all_R_over_sur all_ul_over_sur
+# @save "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur all_R_over all_ul_over all_R_over_sur all_ul_over_sur all_r all_r_sur
 
-# @load "../data/1com_0.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur all_R_over all_ul_over all_R_over_sur all_ul_over_sur
+@load "../data/1com-1.jld2" all_ℵii all_ℵij all_up_ℵij all_low_ℵij all_ℵij_sum all_D_ℵij all_ℵii_sur all_ℵij_sur all_up_ℵij_sur all_low_ℵij_sur all_ℵij_sum_sur all_D_ℵij_sur all_R_over all_ul_over all_R_over_sur all_ul_over_sur all_r all_r_sur
+
+plot([var(all_ℵii[t]) for t in 1:num_temps])
 
 function ellipse_points(center, axis_lengths, angle_ellipse; n_points=100)
     t = range(0, 2π, length=n_points)
@@ -158,6 +163,27 @@ Label(f[1,1, TopLeft()], "(b)")
 f
 save("../results/αijαji-1.pdf", f) 
 
+num_temps = 31
+cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
+cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
+cs = vcat(cscheme[1:16], cscheme1[2:16])
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = "αᵢⱼ", ylabel = "αⱼᵢ", xlabelsize = 50, ylabelsize = 50)
+# for i in 1: 26
+scatter!(ax, vcat(all_up_ℵij...), vcat(all_low_ℵij...), markersize = 5, alpha = 0.3)
+# end 
+# min = minimum(log.(abs.(vcat(all_up_ℵij..., all_low_ℵij...))))
+# max = maximum(log.(abs.(vcat(all_up_ℵij..., all_low_ℵij...))))
+# lines!(ax, [min, max], [min, max], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+# Colorbar(f[1,2], colorrange = [0, num_temps], colormap = cs, label = "Temperature")
+f
+
+cor(vcat(all_up_ℵij...), vcat(all_low_ℵij...))
+
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = "αᵢⱼ", ylabel = "αⱼᵢ", xlabelsize = 50, ylabelsize = 50)
+density!(ax, vcat(all_up_ℵij...)./vcat(all_low_ℵij...))# , markersize = 5, alpha = 0.2)
+f
 # i = 11
 # f = Figure(fontsize = 35, size = (1200, 900));
 # ax = Axis(f[1,1], xlabel = "log(|αij|)", ylabel = "log(|αji|)", xlabelsize = 50, ylabelsize = 50)
@@ -232,6 +258,21 @@ end
 Label(f[1,1, TopLeft()], "(a)")
 f
 
+###################
+cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
+cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
+cs = vcat(cscheme[1:16], cscheme1[2:16])
+f = Figure(fontsize = 35, size = (1200, 1200));
+ax = Axis(f[1,1], xlabel = "log(|α|)", ylabel = "Density", xlabelsize = 50, ylabelsize = 50)
+for i in 1: 31
+    density!(ax, log.(abs.(vcat(all_ℵii[i], all_ℵij[i]))), color = (cs[i], 0.3), strokewidth = 3, strokecolor = (cs[i], 0.5))
+    # lines!(ax, [median(log.(abs.(vcat(all_ℵii[i], all_ℵij[i])))), median(log.(abs.(vcat(all_ℵii[i], all_ℵij[i]))))], [0, 0.7], linestyle = :dash, color = (cs[i], 0.3), linewidth = 3)
+end 
+# lines!(ax, [ minimum(real.(vcat(all_circ...))), maximum(real.(vcat(all_circ...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+Colorbar(f[1,2], colorrange = [0, 30], colormap = cs, label = "Temperature")
+Label(f[1,1, TopLeft()], "(b)")
+f
+save("../results/distα-1.pdf", f) 
 
 
 
@@ -303,3 +344,52 @@ lines!(ax, Temp_rich, log.(pred), color = ("#E17542", 1), linewidth = 1)
 text!(10, -4.5, text = "E = $(round(E, digits = 3))", align = (:center, :center), fontsize = 35)
 f
 # save("/Users/Danica/Documents/temp_interactions/results/αii_fitted_all-1.pdf", f) 
+
+
+############ Fitting community r #################
+include("./fitting.jl");
+
+progress = Progress(N; desc="Progress running:")
+Temp_rich = range(0, num_temps-1, length = num_temps)
+temp = collect(Temp_rich .+273.15)
+fitted = zeros(Float64, N, 6); id_l0 = Float64[]; id_u0 = Float64[]
+@time for i in 1:N 
+        next!(progress)
+        r = [all_r[t][i] for t in 1:num_temps]
+        if sum(r.< 0) > 0
+            push!(id_l0, Int64(i))
+            absr = abs.(r)
+        else push!(id_u0, Int64(i))
+            absr = r
+        end 
+        Nα, init_in, AIC_in, temp_all, allr = try_params(absr, num_temps, 2000)
+        fit_r = curve_fit(temp_SS, temp_all, allr, init_in)
+        r_square = calculate_r2(fit_r, temp_all, allr)
+        params = fit_r.param
+        # ## calculate_r2
+        pred = temp_SS(temp, params)
+        ss_res = sum((r .- pred).^2)
+        # ss_tot = sum((allr .- mean(allr)).^2)
+        # r_square = 1 - ss_res / ss_tot
+        ## calculate_AIC
+        aic_value = N * log(ss_res / N) + 2 * 4
+        ## store data
+        fitted[Int(i),:] = vcat(params, aic_value, r_square)
+        ## plotting data
+    end 
+R"library(beepr); beep(sound = 4, expr = NULL)"
+
+df_names = ["B0","E","Th","Ed","AIC","r2"]
+fitted = DataFrame(fitted, df_names);
+CSV.write("../results/r_fitted-1.csv", fitted, writeheader=false)
+
+f1 = Figure(size = (1200, 1200));
+@time for i in 1:N 
+    r = [all_r[t][i] for t in 1:num_temps]
+    ax1 = Axis(f1[Int(floor((i-1)/10+1)),Int((i-1) % 10+1)], ygridvisible = false, xgridvisible = false)
+    # params = fitted[Int(i),1:4]
+    # pred = temp_SS(temp, params)
+    scatter!(ax1, Temp_rich, r, color = "#285C93", alpha = 0.5)
+    # lines!(ax1, Temp_rich, pred, color = ("#285C93", 1), linewidth = 1)
+end 
+f1

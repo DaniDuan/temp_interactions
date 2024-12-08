@@ -302,3 +302,5 @@ lines!(ax1, ellipse_pts[1], ellipse_pts[2], color=:red, linewidth=2, label="Dist
 axislegend()
 f
 # CairoMakie.save("scatter_with_ellipse.png")
+
+

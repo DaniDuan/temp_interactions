@@ -1,6 +1,6 @@
 include("./sim_frame.jl");
 
-Eff_results = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 1:65]
+Eff_results = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 1:65]
 col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", "αij_upper", "αij_upper_err","αij_lower", "αij_lower_err",
                 "αii_sur", "αii_sur_err", "αij_sur", "αij_sur_err", "αij_d_sur", "αij_d_sur_err", "αij_upper_sur", "αij_upper_sur_err","αij_lower_sur", "αij_lower_sur_err",
                 "r", "r_err", "r_sur", "r_sur_err", 
@@ -41,30 +41,30 @@ Label(f[1,1, TopLeft()], "(a)")
 f
 save("../results/biomass_r-1.pdf", f) 
 
-f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αij/αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-ax2 = Axis(f[1,1], ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-# ax3 = Axis(f[1,1], ylabel = "", ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-hidespines!(ax2)
-# hidespines!(ax3)
-hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
-lines!(ax1, Temp_rich, Eff_results.αij_d, color = ("#376298",0.8), linewidth = 5, label = "")
-band!(ax1, Temp_rich, Eff_results.αij_d .- Eff_results.αij_d_err , Eff_results.αij_d.+ Eff_results.αij_d_err, color = ("#376298", 0.3))
-lines!(ax2, Temp_rich, meanR, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
-band!(ax2, Temp_rich, meanR .- R_err , meanR .+ R_err , color = ("#F8BA17", 0.5))
-# lines!(ax3, Temp_rich, Eff_results.estα, color = ("#9A2B1A",0.7), linewidth = 5, label = "")
-# band!(ax3, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#9A2B1A", 0.5))
-linkxaxes!(ax1,ax2)
-lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
-text!(ax1, 0, 1.05, text = "↑ αᵢⱼ > αᵢᵢ", align = (:left, :center),fontsize = 30)
-text!(ax1, 0, 0.95, text = "↓ αᵢⱼ < αᵢᵢ", align = (:left, :center),fontsize = 30)
-l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
-# l2 = [LineElement(color = ("#9A2B1A", 0.7), linestyle = nothing, linewidth = 5)]
-l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
-Label(f[1,1, TopLeft()], "(b)")
-f
-save("../results/αR-1.pdf", f) 
+# f = Figure(fontsize = 35, size = (1200, 900));
+# ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αij/αii", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+# ax2 = Axis(f[1,1], ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+# # ax3 = Axis(f[1,1], ylabel = "", ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+# hidespines!(ax2)
+# # hidespines!(ax3)
+# hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
+# lines!(ax1, Temp_rich, Eff_results.αij_d, color = ("#376298",0.8), linewidth = 5, label = "")
+# band!(ax1, Temp_rich, Eff_results.αij_d .- Eff_results.αij_d_err , Eff_results.αij_d.+ Eff_results.αij_d_err, color = ("#376298", 0.3))
+# lines!(ax2, Temp_rich, meanR, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
+# band!(ax2, Temp_rich, meanR .- R_err , meanR .+ R_err , color = ("#F8BA17", 0.5))
+# # lines!(ax3, Temp_rich, Eff_results.estα, color = ("#9A2B1A",0.7), linewidth = 5, label = "")
+# # band!(ax3, Temp_rich, Eff_results.estα .- Eff_results.estα_err , Eff_results.estα .+ Eff_results.estα_err , color = ("#9A2B1A", 0.5))
+# linkxaxes!(ax1,ax2)
+# lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+# text!(ax1, 0, 1.05, text = "↑ αᵢⱼ > αᵢᵢ", align = (:left, :center),fontsize = 30)
+# text!(ax1, 0, 0.95, text = "↓ αᵢⱼ < αᵢᵢ", align = (:left, :center),fontsize = 30)
+# l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
+# # l2 = [LineElement(color = ("#9A2B1A", 0.7), linestyle = nothing, linewidth = 5)]
+# l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
+# Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αij/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+# Label(f[1,1, TopLeft()], "(b)")
+# f
+# save("../results/αR-1.pdf", f) 
 
 f = Figure(fontsize = 35, size = (1200, 900));
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
@@ -97,7 +97,8 @@ Legend(f[1, 1], [s1, s2], tellheight = false, tellwidth = false, ["Stability", "
 f
 save("../results/sta0.pdf", f) 
 
-
+stability_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 59]
+stability_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 59]
 
 ################################
 N=100
@@ -119,7 +120,8 @@ CairoMakie.activate!(type = "pdf")
 # plot(x, log.(abs.(Eff_results.αii)))
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax1 = Axis(f[1,1], title = "Maximal Trade-off", # Minimal
+    xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
 # ax2 = Axis(f[1,1], ylabel = "log(|αij/αii|)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 lines!(ax1, Temp_rich, Eff_results.αii, color = ("#FA8328", 0.8), linewidth = 5, label = "αii")
 band!(ax1, Temp_rich, Eff_results.αii .- Eff_results.αii_err, Eff_results.αii .+ Eff_results.αii_err, color = ("#FA8328", 0.2))
@@ -130,9 +132,9 @@ band!(ax1, Temp_rich,  Eff_results.αij .- Eff_results.αij_err, Eff_results.αi
 # lines!(ax1, Temp_rich,Eff_results.αij_sur, color = ("#015845", 1.0), linewidth = 5, label = "survivor αij")
 # band!(ax1, Temp_rich, Eff_results.αij_sur .- Eff_results.αij_sur_err, Eff_results.αij_sur .+ Eff_results.αij_sur_err, color = ("#015845", 0.2))
 axislegend(position = :lb)
-Label(f[1,1, TopLeft()], "(a)")
+Label(f[1,1, TopLeft()], "(b)")
 f
-save("../results/a0_T.pdf", f) 
+save("../results/a-1_T.pdf", f) 
 
 f = Figure(fontsize = 35, resolution = (1200, 900));
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α_sur", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)

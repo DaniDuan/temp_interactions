@@ -2,6 +2,7 @@ include("./sim_frame.jl");
 
 ########### Defining functions #################
 using LsqFit, GLM
+k = 0.0000862
 temp_SS(T, params) = params[1] .* exp.((-params[2]./k) * ((1 ./T) .-(1/Tr)))./(1 .+ (params[2]./(params[4] .- params[2])) .* exp.(params[4]/k * (1 ./params[3] .- 1 ./T)))
 
 countnonmiss(vec) = count(x -> !ismissing(x), vec)

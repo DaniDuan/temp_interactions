@@ -6,7 +6,7 @@ def_ω(N, M, kw) = ones(M)
 def_u(N, M, kw) = copy(rand(Distributions.Dirichlet(M, 1.0), N)')
 
 function def_l(N, M, L)
-    Random.seed!(6)
+    # Random.seed!(6)
     l = zeros(N, M, M)
     ϕ = fill(1.0, M)
     dD = Dirichlet(ϕ[:])

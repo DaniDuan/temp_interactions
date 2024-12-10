@@ -317,10 +317,10 @@ f
 save("../results/sym0.pdf", f) 
 
 ############ rich vs. stability ############
-path = glob("Eff_iters*", "../data/Eff_p0_new/")
+path = glob("Eff_iters*", "../data/Eff_p-1_new/")
 progress = Progress(length(path)*num_temps; desc="Progress running:")
 num_temps = 31
-all_rich_collect_0 = Vector{Vector{Float64}}(); var_u_collect_0 = Vector{Vector{Float64}}(); var_ϵ_collect_0 = Vector{Vector{Float64}}()
+all_rich_collect_1 = Vector{Vector{Float64}}(); var_u_collect_1 = Vector{Vector{Float64}}(); var_ϵ_collect_1 = Vector{Vector{Float64}}()
 @time for j in 1: num_temps
     all_rich_H = Float64[]; var_u_H = Float64[]; var_ϵ_H = Float64[]
     for i in 1:length(path)
@@ -331,12 +331,12 @@ all_rich_collect_0 = Vector{Vector{Float64}}(); var_u_collect_0 = Vector{Vector{
         append!(var_ϵ_H, std(ϵ))
         next!(progress)
     end 
-    push!(all_rich_collect_0, all_rich_H); push!(var_u_collect_0, var_u_H); push!(var_ϵ_collect_0, var_ϵ_H)
+    push!(all_rich_collect_1, all_rich_H); push!(var_u_collect_1, var_u_H); push!(var_ϵ_collect_1, var_ϵ_H)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
 
-stability_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 59]
-stability_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 59]
+# stability_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 59]
+# stability_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 59]
 mean_rich_0 = [mean(all_rich_collect_0[t]) for t in 1:num_temps]
 rich_err_0 = [std(all_rich_collect_0[t])/sqrt(length(all_rich_collect_0[t])) for t in 1: num_temps]
 mean_u_0 = [mean(var_u_collect_0[t]) for t in 1:num_temps]
@@ -471,10 +471,10 @@ function pielou_evenness(C_rela)
     return H / H_max
 end
 
-path = glob("Eff_iters*", "../data/Eff_p0_new/")
+path = glob("Eff_iters*", "../data/Eff_p-1_new/")
 progress = Progress(length(path)*num_temps; desc="Progress running:")
 num_temps = 31
-all_even_collect_0 = Vector{Vector{Float64}}()
+all_even_collect_1 = Vector{Vector{Float64}}()
 @time for j in 1: num_temps
     all_even_H = Float64[];
     # all_αijii_H = Float64[]
@@ -485,7 +485,7 @@ all_even_collect_0 = Vector{Vector{Float64}}()
         # append!(all_αijii_H,  αijii);
         next!(progress)
     end 
-    push!(all_even_collect_0, all_even_H)
+    push!(all_even_collect_1, all_even_H)
     # push!(all_αijii_collect, all_αijii_H)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
@@ -579,43 +579,51 @@ f
 
 
 ############### σ vs. stability 
-stability_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 59]
-stability_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 59]
+# stability_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:, 59]
+# stability_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:, 59]
 
 path = glob("Eff_iters*", "../data/Eff_p-1_new/")
 progress = Progress(length(path)*num_temps; desc="Progress running:")
 num_temps = 31
-all_ij_collect_1 = Vector{Vector{Float64}}(); all_ii_collect_1 = Vector{Vector{Float64}}();
-all_ij_collect_org_1 = Vector{Vector{Float64}}(); all_ii_collect_org_1 = Vector{Vector{Float64}}();
+var_ij_collect_1 = Vector{Vector{Float64}}(); var_ii_collect_1 = Vector{Vector{Float64}}();
+var_ij_all_collect_1 = Vector{Vector{Float64}}(); var_ii_all_collect_1  = Vector{Vector{Float64}}();
+all_ii_collect_1 = Vector{Vector{Float64}}(); all_ij_collect_1 = Vector{Vector{Float64}}();
 var_u_collect_1 = Vector{Vector{Float64}}() ; var_m_collect_1 = Vector{Vector{Float64}}()
 idx = collect(CartesianIndices(zeros(Float64, N, N)))
 ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
 @time for j in 1: num_temps
-    all_ij_H = Float64[]; all_ii_H = Float64[]; 
-    all_ij_org_H = Float64[]; all_ii_org_H = Float64[]; 
+    α_ij_var = Float64[]; α_ii_var = Float64[]; α_ij_all_var = Float64[]; α_ii_all_var = Float64[];
+    α_ij =  Float64[]; α_ii = Float64[];
     var_u_H = Float64[]; var_m_H = Float64[]
     for i in 1:length(path)
-        @load path[i]  all_ℵii all_ℵij all_u all_m #all_ℵii_sur
-        # A = zeros(Float64, N, N)
-        # A[ind_off] = all_ℵij[j]
-        # A[diagind(A)] = all_ℵii[j]
-        # ij = std(log.(abs.([A[i, j]/A[i, i] for i in 1:N for j in 1:N if j != i])))
-        ij = std(log.(abs.(all_ℵij[j])))
-        ii = std(log.(abs.(all_ℵii[j])))
+        @load path[i]  all_ℵii all_ℵij all_u all_m all_ℵii_sur
+        sur = findall(x -> x in all_ℵii_sur[j], all_ℵii[j])
+        N_s = length(sur)
+        A = zeros(Float64, N, N)
+        A[ind_off] = all_ℵij[j]
+        A[diagind(A)] = all_ℵii[j]
+        A_sur = A[sur, sur]
+        A_sur_off = [A_sur[i, j] for i in 1:N_s for j in 1:N_s if i != j]
         var_u = std(log.(abs.(all_u[j])))
-        var_m = std(log.(abs.(all_m[j])))
-        append!(all_ij_H, ij); append!(all_ii_H, ii); 
-        append!(all_ij_org_H, all_ℵij[j]); append!(all_ii_org_H, all_ℵii[j]); 
+        var_m = std(log.(abs.(all_m[j][sur])))
+        var_ii = std(log.(abs.(diag(A_sur))))
+        var_ij = std(log.(abs.(A_sur_off)))
+        append!(α_ij_var, var_ij); append!(α_ii_var, var_ii);
+        append!(α_ij_all_var, std(log.(abs.(all_ℵij[j])))); append!(α_ii_all_var, std(log.(abs.(all_ℵii[j]))));
+        append!(α_ij, A_sur_off); append!(α_ii, diag(A_sur)); 
         append!(var_u_H, var_u); append!(var_m_H, var_m); 
         next!(progress)
     end 
-    push!(all_ij_collect_1, all_ij_H); push!(all_ii_collect_1, all_ii_H); 
-    push!(all_ij_collect_org_1, all_ij_org_H); push!(all_ii_collect_org_1, all_ii_org_H); 
-    push!(var_u_collect_1, var_u_H); push!( var_m_collect_1, var_m_H); 
+    push!(var_ij_collect_1, α_ij_var); push!(var_ii_collect_1, α_ii_var);
+    push!(var_ij_all_collect_1, α_ij_all_var); push!(var_ii_all_collect_1, α_ii_all_var);
+    push!(all_ii_collect_1, α_ii); push!(all_ij_collect_1, α_ij);
+    push!(var_u_collect_1, var_u_H); push!(var_m_collect_1, var_m_H); 
 end 
 
-all_ii = vcat(all_ii_collect_0...,all_ii_collect_1...)
-all_ij = vcat(all_ij_collect_0...,all_ij_collect_1...)
+all_ii = vcat(var_ii_collect_0...,var_ii_collect_1...)
+all_ij = vcat(var_ij_collect_0...,var_ij_collect_1...)
+all_var_ii = vcat(var_ii_all_collect_0...,var_ii_all_collect_1...)
+all_var_ij = vcat(var_ij_all_collect_0...,var_ij_all_collect_1...)
 all_u = vcat(var_u_collect_0...,var_u_collect_1...)
 all_m = vcat(var_m_collect_0...,var_m_collect_1...)
 
@@ -628,21 +636,21 @@ function ellipse_points(center, axis_lengths, angle_ellipse; n_points=100)
 end
 confidence_interval_factor = 2.4477  # 95% confidence for 2D ellipse
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "σ(log(u))", ylabel = "σ(log(α))", xlabelsize = 50, ylabelsize = 50)
-x = all_u; y = all_ii
+ax = Axis(f[1,1], xlabel = L"σ(log(u))", ylabel = L"σ(log(α))", xlabelsize = 50, ylabelsize = 50)
+x = all_u; y = all_var_ii
 mean_x, mean_y = mean(x), mean(y)
-eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_ii)))
+eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_var_ii)))
 axis_lengths = sqrt.(eigen_vals) * confidence_interval_factor
 angle_ellipse = atan(eigen_vecs[2, 1], eigen_vecs[1, 1])
-ellipse_pts_1 = ellipse_points([mean(all_u), mean(all_ii)], axis_lengths, angle_ellipse)
+ellipse_pts_1 = ellipse_points([mean(all_u), mean(all_var_ii)], axis_lengths, angle_ellipse)
 scatter!(ax, x, y, color = "#FA8328", markersize = 15, alpha = 0.1, label = "αᵢᵢ")
 lines!(ax, ellipse_pts_1[1], ellipse_pts_1[2], color="#0758AE", linewidth=5)
-x = all_u; y = all_ij
+x = all_u; y = all_var_ij
 mean_x, mean_y = mean(x), mean(y)
-eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_ij)))
+eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_var_ij)))
 axis_lengths = sqrt.(eigen_vals) * confidence_interval_factor
 angle_ellipse = atan(eigen_vecs[2, 1], eigen_vecs[1, 1])
-ellipse_pts_2 = ellipse_points([mean(all_u), mean(all_ij)], axis_lengths, angle_ellipse)
+ellipse_pts_2 = ellipse_points([mean(all_u), mean(all_var_ij)], axis_lengths, angle_ellipse)
 scatter!(ax, x, y, color = "#015845", markersize = 15, alpha = 0.1, label = "αᵢⱼ")
 lines!(ax, ellipse_pts_2[1], ellipse_pts_2[2], color="#0758AE", linewidth=5)
 axislegend(position = :lt)
@@ -650,43 +658,25 @@ Label(f[1,1, TopLeft()], "(a)")
 f
 save("../results/σu_σα.pdf", f) 
 
-
-
-
-# For αᵢᵢ
-eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_ii)))
-axis_lengths = sqrt.(eigen_vals) * confidence_interval_factor
-angle_ellipse = atan(eigen_vecs[2, 1], eigen_vecs[1, 1])
-ellipse_pts_1 = ellipse_points([mean(all_u), mean(all_ii)], axis_lengths, angle_ellipse)
-
-# For αᵢⱼ
-eigen_vals, eigen_vecs = eigen(cov(hcat(all_u, all_ij)))
-axis_lengths = sqrt.(eigen_vals) * confidence_interval_factor
-angle_ellipse = atan(eigen_vecs[2, 1], eigen_vecs[1, 1])
-ellipse_pts_2 = ellipse_points([mean(all_u), mean(all_ij)], axis_lengths, angle_ellipse)
-
-
-
-
 # lm_model = lm(@formula(ii ~ u), df)
 # coeffs = coef(lm_model)
 # u_range = range(minimum(all_u), stop=maximum(all_u), length=100)
 # fitted_line = coeffs[1] .+ coeffs[2] .* u_range
 # plot!(u_range, fitted_line, label="Fitted Line", color=:red)
 
-var_ij_0 = [mean(all_ij_collect_0[t]) for t in 1: num_temps]
-var_err_0 = [std(all_ij_collect_0[t])/sqrt(length(all_ij_collect_0[t])) for t in 1: num_temps]
-var_ii_0 = [mean(all_ii_collect_0[t]) for t in 1: num_temps]
-var_ii_err_0 = [std(all_ii_collect_0[t])/sqrt(length(all_ii_collect_0[t])) for t in 1: num_temps]
+var_ij_0 = [mean(var_ij_collect_0[t]) for t in 1: num_temps]
+var_err_0 = [std(var_ij_collect_0[t])/sqrt(length(var_ij_collect_0[t])) for t in 1: num_temps]
+var_ii_0 = [mean(var_ii_collect_0[t]) for t in 1: num_temps]
+var_ii_err_0 = [std(var_ii_collect_0[t])/sqrt(length(var_ii_collect_0[t])) for t in 1: num_temps]
 var_u_0 = [mean(var_u_collect_0[t]) for t in 1: num_temps]
 var_u_err_0 = [std(var_u_collect_0[t])/sqrt(length(var_u_collect_0[t])) for t in 1: num_temps]
 var_m_0 = [mean(var_m_collect_0[t]) for t in 1: num_temps]
 var_m_err_0 = [std(var_m_collect_0[t])/sqrt(length(var_m_collect_0[t])) for t in 1: num_temps]
 
-var_ij_1 = [mean(all_ij_collect_1[t]) for t in 1: num_temps]
-var_err_1 = [std(all_ij_collect_1[t])/sqrt(length(all_ij_collect_1[t])) for t in 1: num_temps]
-var_ii_1 = [mean(all_ii_collect_1[t]) for t in 1: num_temps]
-var_ii_err_1 = [std(all_ii_collect_1[t])/sqrt(length(all_ii_collect_1[t])) for t in 1: num_temps]
+var_ij_1 = [mean(var_ij_collect_1[t]) for t in 1: num_temps]
+var_err_1 = [std(var_ij_collect_1[t])/sqrt(length(var_ij_collect_1[t])) for t in 1: num_temps]
+var_ii_1 = [mean(var_ii_collect_1[t]) for t in 1: num_temps]
+var_ii_err_1 = [std(var_ii_collect_1[t])/sqrt(length(var_ii_collect_1[t])) for t in 1: num_temps]
 var_u_1 = [mean(var_u_collect_1[t]) for t in 1: num_temps]
 var_u_err_1 = [std(var_u_collect_1[t])/sqrt(length(var_u_collect_1[t])) for t in 1: num_temps]
 var_m_1 = [mean(var_m_collect_1[t]) for t in 1: num_temps]
@@ -697,7 +687,7 @@ stability_all = vcat(stability_0, stability_1);
 var_ij_err = vcat(var_err_0, var_err_1); var_ii_err = vcat(var_ii_err_0, var_ii_err_1); 
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "σ(log(α))", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
+ax = Axis(f[1,1], xlabel = L"σ(log(α))_{feas}", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
 scatter!(ax, var_ii, stability_all, color = "#FA8328", markersize = 15, alpha = 0.8, label = "αᵢᵢ")
 for (x, y, e) in zip(var_ii, stability_all, var_ii_err)
     # Vertical line
@@ -725,11 +715,11 @@ Label(f[1,1, TopLeft()], "(b)")
 f
 save("../results/sta_σα.pdf", f) 
 
-over_zero_0 = [sum(all_ii_collect_org_0[t].> 1.0e-7)/length(all_ii_collect_org_0[t]) for t in 1:num_temps]
-over_zero_1 = [sum(all_ii_collect_org_1[t].> 1.0e-7)/length(all_ii_collect_org_1[t]) for t in 1:num_temps]
+over_zero_0 = [sum(all_ii_collect_0[t].> 1.0e-7)/length(all_ii_collect_0[t]) for t in 1:num_temps]
+over_zero_1 = [sum(all_ii_collect_1[t].> 1.0e-7)/length(all_ii_collect_1[t]) for t in 1:num_temps]
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "p(αii > 0)", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
+ax = Axis(f[1,1], xlabel = L"p(α_{ii} > 0)_{feas}", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
 scatter!(ax, over_zero_0, stability_0, color = "#376298", markersize = 15, alpha = 0.8, label = "ρ = 0")
 scatter!(ax, over_zero_1, stability_1, color = "#9A2B1A", markersize = 15, alpha = 0.8, label = "ρ = -1")
 axislegend(position = :rt)
@@ -737,12 +727,12 @@ Label(f[1,1, TopLeft()], "(c)")
 f
 save("../results/sta_αii.pdf", f) 
 
-reactivity_0 = [sum(all_leadH_0[t] .>0)./length(path_0) for t in 1:num_temps]
-reactivity_1 = [sum(all_leadH_1[t] .>0)./length(path_1) for t in 1:num_temps]
+reactivity_0 = [sum(real.(all_leadH_0[t]) .>0)./length(path_0) for t in 1:num_temps]
+reactivity_1 = [sum(real.(all_leadH_1[t]) .>0)./length(path_1) for t in 1:num_temps]
 reactivity_all = vcat(reactivity_0, reactivity_1)
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "σ(log(α))", ylabel = "p(Reactivity)", xlabelsize = 50, ylabelsize = 50)
+ax = Axis(f[1,1], xlabel = L"σ(log(α))_{feas}", ylabel = "p(Reactivity)", xlabelsize = 50, ylabelsize = 50)
 scatter!(ax, var_ii, reactivity_all, color = "#FA8328", markersize = 15, alpha = 0.8, label = "αᵢᵢ")
 for (x, y, e) in zip(var_ii, reactivity_all, var_ii_err)
     # Vertical line
@@ -769,6 +759,23 @@ axislegend(position = :rt)
 Label(f[1,1, TopLeft()], "(d)")
 f
 save("../results/react_σα.pdf", f) 
+
+f = Figure(fontsize = 35, size = (1200, 900));
+ax = Axis(f[1,1], xlabel = L"σ(log(α))_{feas}", ylabel = "p(Diagonal Dominance)", xlabelsize = 50, ylabelsize = 50)
+scatter!(ax, var_ii, diag_dom_all, color = :black, markersize = 15, alpha = 0.8)
+for (x, y, e) in zip(var_ii_0, diag_dom_0, var_ii_err_0)
+    # Vertical line
+    lines!(ax, [x - e, x + e], [y, y], color = (:black, 0.4), linewidth = 1)
+    # Horizontal caps
+    cap_length_0 = 0.01 * mean(diag_dom_0)  # Length of horizontal caps
+    # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
+    # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
+    lines!(ax, [x - e, x - e], [y - cap_length_0, y + cap_length_0], color = (:black, 0.4), linewidth = 1)
+    lines!(ax, [x + e, x + e], [y - cap_length_0, y + cap_length_0], color = (:black, 0.4), linewidth = 1)
+end
+# Label(f[1,1, TopLeft()], "(d)")
+f
+save("../results/σii_diag_dom.pdf", f) 
 
 
 var_u = vcat(var_u_0, var_u_1)
@@ -893,62 +900,63 @@ cor(vcat(all_upper_collect...), vcat(all_lower_collect...))
 
 
 ########### diagonal dominance ###########
-diag_dom_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:,60]
-diag_dom_0_err = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:,61]
-diag_dom_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:,60]
-diag_dom_1_err = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:,61]
+# diag_dom_0 = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:,60]
+# diag_dom_0_err = CSV.read("../results/Eff_results_p0_new.csv", DataFrame, header=false)[:,61]
+# diag_dom_1 = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:,60]
+# diag_dom_1_err = CSV.read("../results/Eff_results_p-1_new.csv", DataFrame, header=false)[:,61]
 
-f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "p(Diagnoal Dominance)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-ax2 = Axis(f[1,1], ylabel = "p(Diagnoal Dominance)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-lines!(ax1, Temp_rich,diag_dom_0, color = ("#376298", 0.8), linewidth = 5, label = "ρ = 0")
-band!(ax1, Temp_rich, diag_dom_0 .- diag_dom_0_err, diag_dom_0 .+ diag_dom_0_err, color = ("#376298", 0.2))
-lines!(ax2, Temp_rich, diag_dom_1, color = ("#9A2B1A", 0.8), linewidth = 5, label = "ρ = -1")
-band!(ax2, Temp_rich, diag_dom_1 .- diag_dom_1_err, diag_dom_1 .+ diag_dom_1_err, color = ("#9A2B1A", 0.2))
-l1 = [LineElement(color = ("#376298",0.8), linestyle = nothing, linewidth = 5)]
-l2 = [LineElement(color = ("#9A2B1A", 0.8), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["ρ = 0", "ρ = -1"], halign = :left, valign = :top)
-# Label(f[1,1, TopLeft()], "(a)")
-f
+# f = Figure(fontsize = 35, size = (1200, 900));
+# ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "p(Diagnoal Dominance)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+# ax2 = Axis(f[1,1], ylabel = "p(Diagnoal Dominance)", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+# lines!(ax1, Temp_rich,diag_dom_0, color = ("#376298", 0.8), linewidth = 5, label = "ρ = 0")
+# band!(ax1, Temp_rich, diag_dom_0 .- diag_dom_0_err, diag_dom_0 .+ diag_dom_0_err, color = ("#376298", 0.2))
+# lines!(ax2, Temp_rich, diag_dom_1, color = ("#9A2B1A", 0.8), linewidth = 5, label = "ρ = -1")
+# band!(ax2, Temp_rich, diag_dom_1 .- diag_dom_1_err, diag_dom_1 .+ diag_dom_1_err, color = ("#9A2B1A", 0.2))
+# l1 = [LineElement(color = ("#376298",0.8), linestyle = nothing, linewidth = 5)]
+# l2 = [LineElement(color = ("#9A2B1A", 0.8), linestyle = nothing, linewidth = 5)]
+# Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, ["ρ = 0", "ρ = -1"], halign = :left, valign = :top)
+# # Label(f[1,1, TopLeft()], "(a)")
+# f
 
-f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "p(Diagnoal Dominance)", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
-scatter!(ax, diag_dom_0, stability_0, color = "#376298", markersize = 15, alpha = 0.8, label = "ρ = 0")
-for (x, y, e) in zip(diag_dom_0, stability_0, diag_dom_0_err)
-    # Vertical line
-    lines!(ax, [x - e, x + e], [y, y], color = ("#376298", 0.4), linewidth = 1)
-    # Horizontal caps
-    cap_length_0 = 0.001 * mean(stability_0)  # Length of horizontal caps
-    # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
-    # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
-    lines!(ax, [x - e, x - e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
-    lines!(ax, [x + e, x + e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
-end
-scatter!(ax, diag_dom_1, stability_1, color = "#9A2B1A", markersize = 15, alpha = 0.8, label = "ρ = -1")
-for (x, y, e) in zip(diag_dom_1, stability_1, diag_dom_1_err)
-    # Vertical line
-    lines!(ax, [x - e, x + e], [y, y], color = ("#9A2B1A", 0.4), linewidth = 1)
-    # Horizontal caps
-    cap_length_1 = 0.001 * mean(stability_1)  # Length of horizontal caps
-    # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
-    # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
-    lines!(ax, [x - e, x - e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
-    lines!(ax, [x + e, x + e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
-end
-axislegend(position = :lb)
-Label(f[1,1, TopLeft()], "(b)")
-f
+# f = Figure(fontsize = 35, size = (1200, 900));
+# ax = Axis(f[1,1], xlabel = "p(Diagnoal Dominance)", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
+# scatter!(ax, diag_dom_0, stability_0, color = "#376298", markersize = 15, alpha = 0.8, label = "ρ = 0")
+# for (x, y, e) in zip(diag_dom_0, stability_0, diag_dom_0_err)
+#     # Vertical line
+#     lines!(ax, [x - e, x + e], [y, y], color = ("#376298", 0.4), linewidth = 1)
+#     # Horizontal caps
+#     cap_length_0 = 0.001 * mean(stability_0)  # Length of horizontal caps
+#     # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
+#     # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
+#     lines!(ax, [x - e, x - e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
+#     lines!(ax, [x + e, x + e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
+# end
+# scatter!(ax, diag_dom_1, stability_1, color = "#9A2B1A", markersize = 15, alpha = 0.8, label = "ρ = -1")
+# for (x, y, e) in zip(diag_dom_1, stability_1, diag_dom_1_err)
+#     # Vertical line
+#     lines!(ax, [x - e, x + e], [y, y], color = ("#9A2B1A", 0.4), linewidth = 1)
+#     # Horizontal caps
+#     cap_length_1 = 0.001 * mean(stability_1)  # Length of horizontal caps
+#     # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
+#     # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
+#     lines!(ax, [x - e, x - e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
+#     lines!(ax, [x + e, x + e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
+# end
+# axislegend(position = :lb)
+# Label(f[1,1, TopLeft()], "(d)")
+# f
 save("../results/sta_diag_dom.pdf", f) 
 
 ##########
 path_1 = glob("Eff_iters*", "../data/Eff_p-1_new/")
-progress = Progress(length(path_0)*num_temps; desc="Progress running:")
+progress = Progress(length(path_1)*num_temps; desc="Progress running:")
 num_temps = 31
 idx = collect(CartesianIndices(zeros(Float64, N, N)))
 ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
-all_leading_collect1 = Vector{Vector{ComplexF64}}(); α_ij_collect1 = Vector{Vector{Float64}}(); α_ii_collect1 = Vector{Vector{Float64}}()
+all_leading_collect_1= Vector{Vector{ComplexF64}}(); α_ij_collect_1 = Vector{Vector{Float64}}(); α_ii_collect_1 = Vector{Vector{Float64}}(); var_Jac_collect_1 = Vector{Vector{Float64}}();
+diag_dom_collect_1 = Vector{Vector{Float64}}()
 @time for j in 1: num_temps
-    all_leading_H = ComplexF64[]; α_ij = Float64[]; α_ii = Float64[]
+    all_leading_H = ComplexF64[]; α_ij = Float64[]; α_ii = Float64[]; var_Jac_H = Float64[]; all_diag_dom_H = Float64[]
     for i in 1:length(path_1)
         @load path_1[i] all_ℵii all_ℵij all_r_sur all_ℵii_sur all_C
         sur = findall(x -> x in all_ℵii_sur[j], all_ℵii[j])
@@ -959,51 +967,73 @@ all_leading_collect1 = Vector{Vector{ComplexF64}}(); α_ij_collect1 = Vector{Vec
         A[diagind(A)] = all_ℵii[j]
         A_sur = A[sur, sur]
         LV_Jac = [A_sur[i, j]*C[i] for i in 1:N_s, j in 1:N_s]
+        var_Jac = std(diag(LV_Jac))
+        jac_off = [sum(abs.(LV_Jac[i, j]) for j in 1:N_s if j != i) for i in 1:N_s ]
+        diag_dom = sum(abs.(diag(LV_Jac)) - jac_off .> 0)/N_s
+    
         # LV_Jac[diagind(LV_Jac)] .= [r[i] + A_sur[i, i]*C[i] + sum(A_sur[i, j]*C[j] for j in 1:N_s) for i in 1:N_s]
         jac_eigen = eigen(LV_Jac).values
         leading = jac_eigen[argmax(real.(jac_eigen))]
-        append!(all_leading_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j])
+
+        # LV_Jac_new = LV_Jac
+        # LV_Jac_new[diagind(LV_Jac_new)] = fill(mean(diag(LV_Jac_new)), N_s)
+        # jac_eigen_new = eigen(LV_Jac_new).values
+        # leading_new = jac_eigen_new[argmax(real.(jac_eigen_new))]
+        append!(all_leading_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j]); append!(var_Jac_H, var_Jac); 
+        append!(all_diag_dom_H, diag_dom)
+        # append!(all_leading_new_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j]);
         next!(progress)
     end 
-    push!(all_leading_collect1, all_leading_H); push!(α_ij_collect1, α_ij); push!(α_ii_collect1, α_ii)
+    push!(all_leading_collect_1, all_leading_H); push!(α_ij_collect_1, α_ij); push!(α_ii_collect_1, α_ii); push!(var_Jac_collect_1, var_Jac_H);
+    push!(diag_dom_collect_1, all_diag_dom_H)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
-sta0 = [sum(real.(all_leading_collect0[t]) .< 0)/length(path_0) for t in 1: num_temps]
-sta1 = [sum(real.(all_leading_collect1[t]) .< 0)/length(path_1) for t in 1: num_temps]
 
 mean_rich_0 = [mean(all_rich_collect_0[t]) for t in 1:num_temps]
 rich_err_0 = [std(all_rich_collect_0[t])/sqrt(length(all_rich_collect_0[t])) for t in 1: num_temps]
 mean_rich_1 = [mean(all_rich_collect_1[t]) for t in 1:num_temps]
 rich_err_1 = [std(all_rich_collect_1[t])/sqrt(length(all_rich_collect_1[t])) for t in 1: num_temps]
+var_jacii_0 = [mean(var_Jac_collect_0[t]) for t in 1:num_temps]
+var_jacii_err_0 = [std(var_Jac_collect_0[t])/sqrt(length(var_Jac_collect_0[t])) for t in 1:num_temps]
+var_jacii_1 = [mean(var_Jac_collect_1[t]) for t in 1:num_temps]
+var_jacii_err_1 = [std(var_Jac_collect_1[t])/sqrt(length(var_Jac_collect_1[t])) for t in 1:num_temps]
+var_jacii_all = vcat(var_jacii_0, var_jacii_1)
+var_jacii_err_all = vcat(var_jacii_err_0, var_jacii_err_1)
+
+# diagonal dominance 
+diag_dom_0 = [mean(diag_dom_collect_0[t]) for t in 1:num_temps]
+diag_dom_err_0 = [std(diag_dom_collect_0[t])/sqrt(length(diag_dom_collect_0[t])) for t in 1: num_temps]
+diag_dom_1 = [mean(diag_dom_collect_1[t]) for t in 1:num_temps]
+diag_dom_err_1 = [std(diag_dom_collect_1[t])/sqrt(length(diag_dom_collect_1[t])) for t in 1: num_temps]
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax = Axis(f[1,1], xlabel = "Richness", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
-scatter!(ax, mean_rich_0, sta0, color = "#376298", markersize = 15, alpha = 0.8, label = "ρ = 0")
-for (x, y, e) in zip(mean_rich_0, sta0, rich_err_0)
+ax = Axis(f[1,1], xlabel = "p(Diagonal Dominance)", ylabel = "p(Stability)", xlabelsize = 50, ylabelsize = 50)
+scatter!(ax, diag_dom_0, stability_0, color = "#376298", markersize = 15, alpha = 0.8, label = "ρ = 0")
+for (x, y, e) in zip(diag_dom_0, stability_0, diag_dom_err_0)
     # Vertical line
     lines!(ax, [x - e, x + e], [y, y], color = ("#376298", 0.4), linewidth = 1)
     # Horizontal caps
-    cap_length_0 = 0.001 * mean(sta0)  # Length of horizontal caps
+    cap_length_0 = 0.001 * mean(stability_0)  # Length of horizontal caps
     # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
     # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
     lines!(ax, [x - e, x - e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
     lines!(ax, [x + e, x + e], [y - cap_length_0, y + cap_length_0], color = ("#376298", 0.4), linewidth = 1)
 end
-scatter!(ax, mean_rich_1, sta1, color = "#9A2B1A", markersize = 15, alpha = 0.8, label = "ρ = -1")
-for (x, y, e) in zip(mean_rich_1, sta1, rich_err_1)
+scatter!(ax, diag_dom_1, stability_1, color = "#9A2B1A", markersize = 15, alpha = 0.8, label = "ρ = -1")
+for (x, y, e) in zip(diag_dom_1, stability_1, diag_dom_err_1)
     # Vertical line
     lines!(ax, [x - e, x + e], [y, y], color = ("#9A2B1A", 0.4), linewidth = 1)
     # Horizontal caps
-    cap_length_1 = 0.001 * mean(sta1)  # Length of horizontal caps
+    cap_length_1 = 0.001 * mean(stability_1)  # Length of horizontal caps
     # lines!(ax, [x - cap_length, x + cap_length], [y - e, y - e], color = ("#015845", 0.4), linewidth = 1)
     # lines!(ax, [x - cap_length, x + cap_length], [y + e, y + e], color = ("#015845", 0.4), linewidth = 1)
     lines!(ax, [x - e, x - e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
     lines!(ax, [x + e, x + e], [y - cap_length_1, y + cap_length_1], color = ("#9A2B1A", 0.4), linewidth = 1)
 end
-axislegend(position = :rb)
-# Label(f[1,1, TopLeft()], "(a)")
+axislegend(position = :lb)
+Label(f[1,1, TopLeft()], "(d)")
 f
-
+save("../results/sta_diag_dom.pdf", f) 
 
 ############## stability ################
 path = glob("Eff_iters*", "../data/Eff_p0_new/")
@@ -1105,18 +1135,60 @@ plot([sum(all_leadH_0[t] .>0)./length(path) for t in 1:num_temps],[sum(real.(all
 
 count(x -> x[1] < 0 && x[2] > 0, zip(real.(vcat(all_circ_0...)), vcat(all_leadH_0...)))/ length(circ_vec)
 
+path_0 = glob("Eff_iters*", "../data/Eff_p0_new/")
+progress = Progress(length(path_0)*num_temps; desc="Progress running:")
+num_temps = 31
+idx = collect(CartesianIndices(zeros(Float64, N, N)))
+ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+all_leadH_0= Vector{Vector{ComplexF64}}(); all_leadJ_0= Vector{Vector{ComplexF64}}(); α_ij_collect_0 = Vector{Vector{Float64}}(); α_ii_collect_0 = Vector{Vector{Float64}}()
+@time for j in 1: num_temps
+    all_leading_H = ComplexF64[]; all_leadH_H = ComplexF64[]; α_ij = Float64[]; α_ii = Float64[]
+    for i in 1:length(path_0)
+        @load path_0[i] all_ℵii all_ℵij all_r_sur all_ℵii_sur all_C
+        sur = findall(x -> x in all_ℵii_sur[j], all_ℵii[j])
+        N_s = length(sur)
+        C = all_C[j]; r = all_r_sur[j]
+        A = zeros(Float64, N, N)
+        A[ind_off] = all_ℵij[j]
+        A[diagind(A)] = all_ℵii[j]
+        A_sur = A[sur, sur]
+        A_sur_off = [A_sur[i, j] for i in 1:N_s for j in 1:N_s if i != j]
+        LV_Jac = [A_sur[i, j]*C[i] for i in 1:N_s, j in 1:N_s]
+        # LV_Jac[diagind(LV_Jac)] .= [r[i] + A_sur[i, i]*C[i] + sum(A_sur[i, j]*C[j] for j in 1:N_s) for i in 1:N_s]
+        jac_eigen = eigen(LV_Jac).values
+        leading = jac_eigen[argmax(real.(jac_eigen))]
+
+        LV_H = (LV_Jac + LV_Jac')./2
+        H_eigen = eigen(LV_H).values
+        H_leading = H_eigen[argmax(real.(H_eigen))]
+    
+        # LV_Jac_new = LV_Jac
+        # LV_Jac_new[diagind(LV_Jac_new)] = fill(mean(diag(LV_Jac_new)), N_s)
+        # jac_eigen_new = eigen(LV_Jac_new).values
+        # leading_new = jac_eigen_new[argmax(real.(jac_eigen_new))]
+        append!(all_leading_H, leading); push!(all_leadH_H, H_leading); append!(α_ij, A_sur_off); append!(α_ii, diag(A_sur));
+        # append!(all_leading_new_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j]);
+        next!(progress)
+    end 
+    push!(all_leadH_0, all_leadH_H); push!(all_leadJ_0, all_leading_H); push!(α_ij_collect_0, α_ij); push!(α_ii_collect_0, α_ii)
+end 
+R"library(beepr); beep(sound = 4, expr = NULL)"
+
+
 temp_0 = hcat([repeat([Temp_rich[t]], length(all_leadH_0[t])) for t in 1:num_temps]...)
 temp_1 = hcat([repeat([Temp_rich[t]], length(all_leadH_1[t])) for t in 1:num_temps]...)
+stability_0 = [sum(real.(all_leadJ_0[t]) .< 0)/length(path_0) for t in 1: num_temps]
+stability_1 = [sum(real.(all_leadJ_1[t]) .< 0)/length(path_1) for t in 1: num_temps]
 
 f = Figure(fontsize = 30, size = (1800, 600));
 Label(f[:,0], "Minimal Trade-off", fontsize = 50, rotation = pi/2)
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Real λᴶₘ ", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
 ax1_2 = Axis(f[1,1], ylabel = "p(Stability)", xlabelsize = 35, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 for t in 1: num_temps
-    scatter!(ax1, temp_0[:,t], real.(all_circ_0[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+    scatter!(ax1, temp_0[:,t], real.(all_leadJ_0[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
 end 
 lines!(ax1, [0, 30], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-scatter!(ax1_2, Temp_rich, [sum(real.(all_circ_0[t]) .<0)./length(path_0) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
+scatter!(ax1_2, Temp_rich, [sum(real.(all_leadJ_0[t]) .<0)./length(path_0) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
 Label(f[0,1, TopLeft()], "(a)")
 linkxaxes!(ax1,ax1_2); hidespines!(ax1_2)
 s1 = [MarkerElement(color = ("#285C93", 0.3), markersize = 10, marker = :circle)]
@@ -1129,7 +1201,7 @@ for t in 1:num_temps
     scatter!(ax2, temp_0[:,t], real.(all_leadH_0[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
 end
 lines!(ax2, [0, 30], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-scatter!(ax2_2, Temp_rich, [sum(all_leadH_0[t] .>0)./length(path_0) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
+scatter!(ax2_2, Temp_rich, [sum(real.(all_leadH_0[t]) .>0)./length(path_0) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
 linkxaxes!(ax2,ax2_2); hidespines!(ax2_2)
 Label(f[0,2, TopLeft()], "(b)")
 s1 = [MarkerElement(color = ("#285C93", 0.3), markersize = 10, marker = :circle)]
@@ -1137,10 +1209,10 @@ s2 = [MarkerElement(color = ("#F8BA17", 1), markersize = 15, marker = :diamond)]
 # l3 = LineElement(color = ("#EF8F8C", 0.8), linestyle = nothing, linewidth = 5)
 Legend(f[0, 2], [s1,s2], tellheight = false, tellwidth = false, ["λᴴₘ", "p(Reactivity)"], halign = :right, valign = :center, orientation = :horizontal, framevisible = false, labelsize = 25)
 ax3 = Axis(f[1,3], xlabel = "Real λᴶₘ ", ylabel = "λᴴₘ", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-scatter!(ax3, real.(vcat(all_circ_0...)), vcat(all_leadH_0...), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
-lines!(ax3, [ minimum(real.(vcat(all_circ_0...))), maximum(real.(vcat(all_circ_0...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-lines!(ax3, [0,0], [minimum( vcat(all_leadH_0...)), maximum( vcat(all_leadH_0...))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-# rea_sta = count(x -> x[1] < 0 && x[2] > 0, zip(real.(vcat(all_circ_0...)), vcat(all_leadH_0...)))/ length(circ_vec)
+scatter!(ax3, real.(vcat(all_leadJ_0...)), real.(vcat(all_leadH_0...)), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+lines!(ax3, [ minimum(real.(vcat(all_leadJ_0...))), maximum(real.(vcat(all_leadJ_0...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+lines!(ax3, [0,0], [minimum(real.(vcat(all_leadH_0...))), maximum(real.(vcat(all_leadH_0...)))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+# rea_sta = count(x -> x[1] < 0 && x[2] > 0, zip(real.(vcat(all_leadJ_0...)), vcat(all_leadH_0...)))/ length(circ_vec)
 # text!(ax3, minimum(vcat(all_leadH_0...)), 1.0, text = "$(round(rea_sta * 100, digits = 2))%", align = (:left, :center),fontsize = 20)
 Label(f[0,3, TopLeft()], "(c)")
 f
@@ -1151,10 +1223,10 @@ Label(f[:,0], "Maximal Trade-off", fontsize = 50, rotation = pi/2)
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Real λᴶₘ ", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
 ax1_2 = Axis(f[1,1], ylabel = "p(Stability)", xlabelsize = 35, ylabelsize = 35, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 for t in 1: num_temps
-    scatter!(ax1, temp_1[:,t], real.(all_circ_1[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+    scatter!(ax1, temp_1[:,t], real.(all_leadJ_1[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
 end 
 lines!(ax1, [0, 30], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-scatter!(ax1_2, Temp_rich, [sum(real.(all_circ_1[t]) .<0)./length(path_1) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
+scatter!(ax1_2, Temp_rich, [sum(real.(all_leadJ_1[t]) .<0)./length(path_1) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
 Label(f[0,1, TopLeft()], "(d)")
 linkxaxes!(ax1,ax1_2); hidespines!(ax1_2)
 s1 = [MarkerElement(color = ("#285C93", 0.3), markersize = 10, marker = :circle)]
@@ -1167,7 +1239,7 @@ for t in 1:num_temps
     scatter!(ax2, temp_1[:,t], real.(all_leadH_1[t]), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
 end
 lines!(ax2, [0, 30], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-scatter!(ax2_2, Temp_rich, [sum(all_leadH_1[t] .>0)./length(path_1) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
+scatter!(ax2_2, Temp_rich, [sum(real.(all_leadH_1[t]) .>0)./length(path_1) for t in 1:num_temps], color = ("#F8BA17"), label = "", marker = :diamond, markersize = 15, alpha = 1.0)
 linkxaxes!(ax2,ax2_2); hidespines!(ax2_2)
 Label(f[0,2, TopLeft()], "(e)")
 s1 = [MarkerElement(color = ("#285C93", 0.3), markersize = 10, marker = :circle)]
@@ -1175,9 +1247,9 @@ s2 = [MarkerElement(color = ("#F8BA17", 1), markersize = 15, marker = :diamond)]
 # l3 = LineElement(color = ("#EF8F8C", 0.8), linestyle = nothing, linewidth = 5)
 Legend(f[0, 2], [s1,s2], tellheight = false, tellwidth = false, ["λᴴₘ", "p(Reactivity)"], halign = :right, valign = :center, orientation = :horizontal, framevisible = false, labelsize = 25)
 ax3 = Axis(f[1,3], xlabel = "Real λᴶₘ ", ylabel = "λᴴₘ", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-scatter!(ax3, real.(vcat(all_circ_1...)), vcat(all_leadH_1...), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
-lines!(ax3, [ minimum(real.(vcat(all_circ_1...))), maximum(real.(vcat(all_circ_1...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
-lines!(ax3, [0,0], [minimum( vcat(all_leadH_1...)), maximum( vcat(all_leadH_1...))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+scatter!(ax3, real.(vcat(all_leadJ_1...)), real.(vcat(all_leadH_1...)), color = ("#285C93"), label = "", markersize = 10, alpha = 0.3) 
+lines!(ax3, [ minimum(real.(vcat(all_leadJ_1...))), maximum(real.(vcat(all_leadJ_1...)))], [0,0], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
+lines!(ax3, [0,0], [minimum(real.(vcat(all_leadH_1...))), maximum(real.(vcat(all_leadH_1...)))], linestyle = :dash, color = ("#4F363E", 1), linewidth = 3)
 Label(f[0,3, TopLeft()], "(f)")
 f
 save("../results/sta_react_1.pdf", f) 
@@ -1367,18 +1439,18 @@ save("../results/αR0.pdf", f)
 
 
 ############### ρ ################
-path = glob("Eff_iters*", "../data/Eff_p-1_new/")
+path = glob("Eff_iters*", "../data/Eff_p0_new/")
 progress = Progress(length(path)*num_temps; desc="Progress running:")
 num_temps = 31
 idx = collect(CartesianIndices(zeros(Float64, N, N)))
 ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
 # all_ρ_collect = Vector{Vector{Float64}}(); all_V_collect = Vector{Vector{Float64}}(); all_E_collect = Vector{Vector{Float64}}();
 # all_upper_collect = Vector{Vector{Float64}}(); all_lower_collect = Vector{Vector{Float64}}(); 
-all_var_d_collect_1 = Vector{Vector{Float64}}(); all_var_offd_collect_1 = Vector{Vector{Float64}}(); 
-all_May_1 = Vector{Vector{Float64}}(); all_Tang_Allesina_1 = Vector{Vector{Float64}}();
-all_A_diag_1 = Vector{Vector{Float64}}(); all_A_off_1 = Vector{Vector{Float64}}();
-# all_A_diag_sur_1 = Vector{Vector{Float64}}(); all_A_off_sur_1 = Vector{Vector{Float64}}();
-all_Jac_diag_1 = Vector{Vector{Float64}}(); all_Jac_off_1 = Vector{Vector{Float64}}()
+all_var_d_collect_0 = Vector{Vector{Float64}}(); all_var_offd_collect_0 = Vector{Vector{Float64}}(); 
+all_May_0 = Vector{Vector{Float64}}(); all_Tang_Allesina_0 = Vector{Vector{Float64}}();
+all_A_diag_0 = Vector{Vector{Float64}}(); all_A_off_0 = Vector{Vector{Float64}}();
+# all_A_diag_sur_0 = Vector{Vector{Float64}}(); all_A_off_sur_0 = Vector{Vector{Float64}}();
+all_Jac_diag_0 = Vector{Vector{Float64}}(); all_Jac_off_0 = Vector{Vector{Float64}}()
 
 @time for j in 1: num_temps
     # all_ρ_H = Float64[]; all_V_H = Float64[]; all_E_H = Float64[]; all_upper_H =  Float64[]; all_lower_H = Float64[]; 
@@ -1420,11 +1492,11 @@ all_Jac_diag_1 = Vector{Vector{Float64}}(); all_Jac_off_1 = Vector{Vector{Float6
         next!(progress)
     end 
     # push!(all_ρ_collect, all_ρ_H); push!(all_V_collect, all_V_H);push!(all_E_collect, all_E_H); push!(all_upper_collect, all_upper_H); push!(all_lower_collect, all_lower_H);
-    push!(all_var_d_collect_1, all_var_d_H); push!(all_var_offd_collect_1, all_var_offd_H);
-    push!(all_May_1, all_May_H); push!(all_Tang_Allesina_1, all_Tang_Allesina_H);
-    # push!(all_A_diag_sur_1, A_diag_sur_H); push!(all_A_off_sur_1, A_off_sur_H);
-    push!(all_A_diag_1, A_diag_H); push!(all_A_off_1, A_off_H);
-    push!(all_Jac_diag_1, Jac_diag_H); push!(all_Jac_off_1, Jac_off_H)
+    push!(all_var_d_collect_0, all_var_d_H); push!(all_var_offd_collect_0, all_var_offd_H);
+    push!(all_May_0, all_May_H); push!(all_Tang_Allesina_0, all_Tang_Allesina_H);
+    # push!(all_A_diag_sur_0, A_diag_sur_H); push!(all_A_off_sur_0, A_off_sur_H);
+    push!(all_A_diag_0, A_diag_H); push!(all_A_off_0, A_off_H);
+    push!(all_Jac_diag_0, Jac_diag_H); push!(all_Jac_off_0, Jac_off_H)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
 

@@ -37,12 +37,12 @@ function F_m(N, M, kw)
 end
 
 function F_ρ(N, M, kw)
-    ρ = fill(1, M)
+    ρ = ones(M)
     return ρ
 end
 
 function F_ω(N, M, kw)
-    ω = fill(0.0, M)
+    ω = zeros(M)
     return ω
 end
 

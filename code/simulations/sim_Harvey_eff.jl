@@ -49,8 +49,8 @@ rich = Float64[]; all_sur = Vector{Vector{Float64}}(); all_ϵ =  Vector{Vector{F
 all_ℵii = Vector{Vector{Float64}}(); all_ℵij = Vector{Vector{Float64}}(); all_ℵij_d = Vector{Vector{Float64}}(); all_uℵij = Vector{Vector{Float64}}(); all_lℵij = Vector{Vector{Float64}}();
 all_ℵii_sur =  Vector{Vector{Float64}}(); all_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_ℵij_d_sur =  Vector{Vector{Union{Float64, Missing}}}(); all_uℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_lℵij_sur = Vector{Vector{Union{Float64, Missing}}}();
 all_r = Vector{Vector{Float64}}(); all_r_sur = Vector{Vector{Float64}}();
-all_leading = ComplexF64[]; all_H_leading = ComplexF64[]; all_diag = Vector{Vector{Float64}}();radi = Vector{Vector{Float64}}(); diag_dominance = Float64[];
-all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}(); 
+all_leading = ComplexF64[]; all_H_leading = ComplexF64[]; all_Jac = Vector{Vector{ComplexF64}}(); diag_dominance = Float64[];
+all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}(); all_u_sur = Vector{Vector{Float64}}()
 # RO =  Vector{Vector{Float64}}(); ulO =  Vector{Vector{Float64}}(); Rul =  Vector{Vector{Float64}}(); 
 # RO_sur = Vector{Vector{Union{Float64, Missing}}}(); ulO_sur = Vector{Vector{Union{Float64, Missing}}}(); Rul_sur = Vector{Vector{Union{Float64, Missing}}}(); 
 all_Eu =  Vector{Vector{Float64}}(); all_Em =  Vector{Vector{Float64}}(); all_Eu_sur = Vector{Vector{Float64}}(); all_Em_sur = Vector{Vector{Float64}}();
@@ -127,9 +127,7 @@ for i in range(0, stop = 30, length = 31)
     LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
     jac_eigen = eigen(LV_jac).values
     leading = jac_eigen[argmax(real.(jac_eigen))]
-    jac_diag = diag(LV_jac)
-    jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N if j != i) for i in 1:N ]
-    diag_dom = sum(abs.(jac_diag) - jac_off .> 0)/N
+
     ### reactivity # https://www.frontiersin.org/journals/ecology-and-evolution/articles/10.3389/fevo.2014.00021/full
     LV_H = (LV_jac + LV_jac')./2
     H_eigen = eigen(LV_H).values
@@ -154,17 +152,22 @@ for i in range(0, stop = 30, length = 31)
         ℵij_d_sur = [sur_ℵ[i, j]/diag(sur_ℵ)[i] for i in 1:N_s for j in 1:N_s if i != j]
         uℵij_sur = [sur_ℵ[i, j] for i in 1:N_s for j in 1:N_s if j > i]
         lℵij_sur = [sur_ℵ[i, j] for i in 1:N_s for j in 1:N_s if j < i]
+        # # Jacobian_diag_dom
+        jac_diag = diag(LV_jac)
+        jac_off = [sum(abs.(LV_jac[i, j]) for j in 1:N_s if j != i) for i in 1:N_s ]
+        diag_dom = sum(abs.(jac_diag) - jac_off .> 0)/N_s
+
         # UDLD_sur = [sur_ℵ[i, j]/sur_ℵ[j, i] for i in 1:N_s for j in 1:N_s if j != i]
         push!(rich, N_s); push!(all_sur, sur); push!(all_ϵ, ϵ);
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
         push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, ℵij_sur); push!(all_ℵij_d_sur, ℵij_d_sur); push!(all_uℵij_sur, uℵij_sur); push!(all_lℵij_sur, lℵij_sur); 
         push!(all_r, r); push!(all_r_sur, r_sur);
-        push!(all_u, vec(u)); push!(all_m, m); 
+        push!(all_u, vec(u)); push!(all_m, m); push!(all_u_sur, vec(p.u[sur,1:M])) # reshape(u_sur, 3, 50)
         # push!(RO, R_over); push!(ulO, ul_over); push!(Rul, Rul_over);
         # push!(RO_sur, R_over_sur); push!(ulO_sur, ul_over_sur); push!(Rul_sur, Rul_over_sur);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_Jac, vec(LV_jac)); push!(diag_dominance, diag_dom);
         push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t);
         push!(all_com_CUE, community_CUE)
     else 
@@ -172,12 +175,12 @@ for i in range(0, stop = 30, length = 31)
         push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
         push!(all_ℵii_sur, diag(sur_ℵ)); push!(all_ℵij_sur, [missing]); push!(all_ℵij_d_sur, [missing]); push!(all_uℵij_sur, [missing]); push!(all_lℵij_sur, [missing]); 
         push!(all_r, all_r); push!(all_r_sur, r_sur);
-        push!(all_u, vec(u)); push!(all_m, m); 
+        push!(all_u, vec(u)); push!(all_m, m); push!(all_u_sur, vec(p.u[sur,1:M])) # reshape(u_sur, 3, 50)
         # push!(RO, [missing]); push!(ulO, [missing]); push!(Rul, [missing]);
         # push!(RO_sur, [missing]); push!(ulO_sur, [missing]); push!(Rul_sur, [missing]);
         push!(all_Eu, Eu); push!(all_Em, Em); push!(all_Eu_sur, Eu_sur); push!(all_Em_sur, Em_sur);
         push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); push!(all_Tpu_sur, Tpu_sur); push!(all_Tpm_sur, Tpm_sur);
-        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_diag, jac_diag); push!(radi, jac_off); push!(diag_dominance, diag_dom);
+        push!(all_leading, leading); push!(all_H_leading, H_leading); push!(all_Jac, vec(LV_jac)); push!(diag_dominance, [missing]);
         push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t);
         push!(all_com_CUE, community_CUE)
     end
@@ -185,6 +188,6 @@ end
 
 # R"library(beepr); beep(sound = 4, expr = NULL)"
 
-@save "../data/20240924/p_re/Eff_iters_re_$(index)_n$((index-1)%3+1).jld2" rich all_sur all_ϵ all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_r_sur all_u all_m all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_H_leading all_diag radi diag_dominance all_Rrela all_Crela all_R all_C all_com_CUE
+@save "../data/20250103/p_re/Eff_iters_re_$(index)_n$((index-1)%3+1).jld2" rich all_sur all_ϵ all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_r_sur all_u all_m all_u_sur all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_H_leading all_Jac diag_dominance all_Rrela all_Crela all_R all_C all_com_CUE
 
 # @load "../data/20240915/p_re/Eff_iters_re_$(index).jld2" all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_ℵii_sur all_ℵij_sur all_ℵij_d_sur all_uℵij_sur all_lℵij_sur all_r all_r_sur all_u all_m RO ulO Rul RO_sur ulO_sur Rul_sur all_Eu all_Em all_Eu_sur all_Em_sur all_Tpu all_Tpm all_Tpu_sur all_Tpm_sur all_leading all_H_leading all_diag radi diag_dominance all_Rrela all_Crela all_R all_C all_com_CUE

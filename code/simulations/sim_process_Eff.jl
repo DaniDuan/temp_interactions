@@ -1739,73 +1739,61 @@ end
 # # Label(f[1,1, TopLeft()], "(a)")
 # f
 
-########## TPC of α ###########
-all_Toii = Float64[]; all_Toij = Float64[]
-for i in 1:length(path)
-    @load path[i] all_ℵ all_ℵii
-    vαii = [var(log.(abs.(all_ℵii[i]))) for i in 1:num_temps]
-    Toii = Temp_rich[argmin(vαii)]
-    αij = [sum(reshape(all_ℵ[i],Int(sqrt(length(all_ℵ[i]))),Int(sqrt(length(all_ℵ[i])))), dims = 2) for i in 1:31]
-    vαij = [var(log.(abs.(αij[i]))) for i in 1:num_temps]
-    Toij = Temp_rich[argmin(vαij)]
-    push!(all_Toii, Toii); push!(all_Toij, Toij)
+path_0 = glob("Eff_iters*", "../data/Eff_p0_new/")
+progress = Progress(length(path_0)*num_temps; desc="Progress running:")
+num_temps = 31
+all_r_sur_collect_0 = Vector{Vector{Float64}}(); all_r_ext_collect_0 = Vector{Vector{Float64}}(); 
+@time for j in 1: num_temps
+    all_r_sur_H = Float64[]; all_r_ext_H = Float64[];
+    for i in 1:length(path_0)
+        @load path_0[i] all_ℵii all_r all_ℵii_sur
+        r = all_r[j]
+        sur = findall(x -> x in all_ℵii_sur[j], all_ℵii[j])
+        r_sur = r[sur]
+        r_ext = r[setdiff(1:N, sur)]
+
+        append!(all_r_sur_H, r_sur);append!(all_r_ext_H, r_ext);
+        # append!(all_leading_new_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j]);
+        next!(progress)
+    end 
+    push!(all_r_sur_collect_0, all_r_sur_H); push!(all_r_ext_collect_0, all_r_ext_H); 
 end 
+R"library(beepr); beep(sound = 4, expr = NULL)"
 
-Tt = Int(floor((mean(all_Toii) + mean(all_Toij))/2))
+r_sur_meam_0 = [mean(all_r_sur_collect_0[t]) for t in 1: num_temps]
+r_sur_meam_err_0= [std(all_r_sur_collect_0[t])/sqrt(length(all_r_sur_collect_0[t])) for t in 1: num_temps]
+r_ext_meam_0 = [mean(all_r_ext_collect_0[t]) for t in 1: num_temps]
+r_ext_meam_err_0= [std(all_r_ext_collect_0[t])/sqrt(length(all_r_ext_collect_0[t])) for t in 1: num_temps]
 
-k = 0.0000862 # Boltzman constant
-x = -1/k .* (1 ./(range(0, Tt, length = Tt+1) .+273.15) .- 1/Tr)
-x_t = -1/k .* (1 ./(Temp_rich .+273.15) .- 1/Tr)
+r_sur_meam_1 = [mean(all_r_sur_collect_1[t]) for t in 1: num_temps]
+r_sur_meam_err_1= [std(all_r_sur_collect_1[t])/sqrt(length(all_r_sur_collect_1[t])) for t in 1: num_temps]
+r_ext_meam_1 = [mean(all_r_ext_collect_1[t]) for t in 1: num_temps]
+r_ext_meam_err_1= [std(all_r_ext_collect_1[t])/sqrt(length(all_r_ext_collect_1[t])) for t in 1: num_temps]
 
-f1 = Figure(fontsize = 35, resolution = (1200, 900));
-f2 = Figure(fontsize = 35, resolution = (1200, 900));
-ax1 = Axis(f1[1,1], xlabel = "Temperature (°C)", ylabel = "αii", xlabelsize = 50, ylabelsize = 50)
-ax2 = Axis(f2[1,1], xlabel = "Temperature (°C)", ylabel = "αij", xlabelsize = 50, ylabelsize = 50)
+r_sur = vcat(r_sur_meam_0, r_sur_meam_1)
+r_sur_err = vcat(r_sur_meam_err_0, r_sur_meam_err_1)
+r_ext = vcat(r_ext_meam_0, r_ext_meam_1)
+r_ext_err = vcat(r_ext_meam_err_0, r_ext_meam_err_1)
 
-all_Bαii = Float64[]; all_Bαij = Float64[]
-all_Eαii = Float64[]; all_Eαij = Float64[]
-for i in 1:length(path)
-    @load path[i] all_ℵ all_ℵii
 
-    y_αii = [mean(all_ℵii[i]) for i in 1:(Tt+1)]
-    data_ii = DataFrame(y = log.(abs.(y_αii)), x = x);
-    Bαii, Eαii= coef(lm(@formula(y ~ x), data_ii))
-    Bαii = exp(Bαii)
+path_0 = glob("Eff_iters*", "../data/Eff_p0_new/")
+progress = Progress(length(path_0)*num_temps; desc="Progress running:")
+num_temps = 31
+all_r_sur_collect_0 = Vector{Vector{Float64}}(); all_r_ext_collect_0 = Vector{Vector{Float64}}(); 
+@time for j in 1: num_temps
+    all_r_sur_H = Float64[]; all_r_ext_H = Float64[];
+    for i in 1:length(path_0)
+        @load path_0[i] all_u all_m all_R all_ℵii all_ℵii_sur
+        U = all_u[j][sur]; M = all_m[j][sur]; R = all_R[j]
 
-    αij = [sum(reshape(all_ℵ[i],Int(sqrt(length(all_ℵ[i]))),Int(sqrt(length(all_ℵ[i])))), dims = 2).- diag(reshape(all_ℵ[i],Int(sqrt(length(all_ℵ[i]))),Int(sqrt(length(all_ℵ[i]))))) for i in 1:num_temps]
-    all_yij = [mean(αij[i]) for i in 1:num_temps]
-    y_αij = [mean(αij[i]) for i in 1:(Tt+1)]
-    data_ij = DataFrame(y = log.(abs.(y_αij)), x = x);
-    Bαij, Eαij = coef(lm(@formula(y ~ x), data_ij))
-    Bαij = exp(Bαij)
-    yii = Bαii * exp.(Eαii .* x_t)
-    yij = Bαij * exp.(Eαij .* x_t)
-    lines!(ax1, Temp_rich, log.(yii), color = ("#E17542", 0.2), linewidth = 0.5)
-    lines!(ax2, Temp_rich, log.(yij), color = ("#E17542", 0.2), linewidth = 0.5)
-    push!(all_Bαii, Bαii); push!(all_Bαij, Bαij)
-    push!(all_Eαii, Eαii); push!(all_Eαij, Eαij)
+        sur = findall(x -> x in all_ℵii_sur[j], all_ℵii[j])
+        r_sur = r[sur]
+        r_ext = r[setdiff(1:N, sur)]
+
+        append!(all_r_sur_H, r_sur);append!(all_r_ext_H, r_ext);
+        # append!(all_leading_new_H,  leading); append!(α_ij, all_ℵij[j]); append!(α_ii, all_ℵii[j]);
+        next!(progress)
+    end 
+    push!(all_r_sur_collect_0, all_r_sur_H); push!(all_r_ext_collect_0, all_r_ext_H); 
 end 
-
-mean_ii = DataFrame(y = log.(abs.(Eff_results.αii)), x = x_t);
-Bii, Eii= coef(lm(@formula(y ~ x), mean_ii))
-Bii = exp(Bii)
-yii = log.(Bii * exp.(E .* x_t))
-lines!(ax1, Temp_rich, log.(abs.(Eff_results.αii)), color = ("#285C93", 1), linewidth = 7, label = "αii")
-band!(ax1, Temp_rich, log.(abs.(Eff_results.αii .- Eff_results.αii_err)), log.(abs.(Eff_results.αii .+ Eff_results.αii_err)), color = ("#285C93", 0.5))
-lines!(ax1, Temp_rich, yii, color = ("#4F363E", 1), linewidth = 5, label = "")
-
-mean_ij = DataFrame(y = log.(abs.(Eff_results.sum_αij))[1:Tt+1], x = x);
-Bij, Eij= coef(lm(@formula(y ~ x), mean_ij))
-Bij = exp(Bij)
-yij = log.(Bij * exp.(Eij .* x_t))
-lines!(ax2, Temp_rich, log.(abs.(Eff_results.sum_αij)), color = ("#285C93", 1), linewidth = 7, label = "αij")
-band!(ax2, Temp_rich,  log.(abs.(Eff_results.sum_αij .- Eff_results.sum_αij_err)), log.(abs.(Eff_results.sum_αij .+ Eff_results.sum_αij_err)), color = ("#285C93", 0.5))
-lines!(ax2, Temp_rich, yij, color = ("#4F363E", 1), linewidth = 5, label = "")
-
-f1
-save("../results/temp_αii.png", f1) 
-
-f2
-save("../results/temp_αij.png", f2) 
-
-
+R"library(beepr); beep(sound = 4, expr = NULL)"

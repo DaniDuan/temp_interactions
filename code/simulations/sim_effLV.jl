@@ -7,7 +7,7 @@ L = fill(0.3, N)
 ### Temp params 
 ρ_t= [0.0000 0.0000]; # realistic covariance
 Tr=273.15+10; Ed=3.5
-T = 273.15+ 0
+T = 273.15+ 10
 tspan = (0.0, 1.5e8)
 x0 = vcat(fill(0.1, N), fill(1, M))
 Ci = fill(0.1, N)

@@ -119,3 +119,17 @@ r_sur_meam_err= [std(all_r_sur_collect[t])/sqrt(length(all_r_sur_collect[t])) fo
 r_ext_meam = [mean(all_r_ext_collect[t]) for t in 1: 50]
 r_ext_meam_err= [std(all_r_ext_collect[t])/sqrt(length(all_r_ext_collect[t])) for t in 1: 50]
 # @load "../data/20240914/v_new/v_$(index).jld2" all_sur all_ℵ all_r all_leading all_diag_dom all_C all_R
+
+##########################################
+density(abs.(all_sur_α_collect[10]))
+density(abs.(all_α_collect[10]))
+all_f = []
+for i in 1:10
+    f = Figure(fontsize = 35, size = (1200, 900));
+    ax = Axis(f[1,1], xlabel = "|α|", ylabel = "density", xlabelsize = 50, ylabelsize = 50)
+    density!(ax, abs.(all_α_collect[5*i]), color = ("#376298", 0.4), label = "α")
+    density!(ax, abs.(all_sur_α_collect[5*i]), color = ("#9A2B1A", 0.4), label = "survivors")
+    axislegend(position = :rt)
+    # push!(all_f, f)
+    display(f)
+end 

@@ -47,7 +47,9 @@ function F_ω(N, M, kw)
 end
 
 function F_u(N, M, kw)
-    @unpack niche = kw
+    # @unpack niche = kw
+    niche = fill(1.0, M, N)
+
     if haskey(kw, :T)
         u_sum = kw[:tt][:,1]
     else 

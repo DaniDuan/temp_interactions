@@ -27,29 +27,29 @@ index = parse(Int, index_str)
 ### Testing L
 # l_v = 0.1 * ((index-1)%7+1)
 # L = fill(l_v, N)
-### Testing niche
-niche_over = fill(100.0, M, N)
-niche_rand = fill(1.0, M, N)
-niche_diff = ones(M, N)
-rand_pos = randperm(M)
-rand_pos_2 = randperm(M)
-for i in 1:N 
-    if i <= M
-        i_con = rand_pos[i]
-    else 
-        i_con = rand_pos_2[i - M]
-    end 
-    niche_diff[i_con, i] = 100.0
-end 
-niche_all =(niche_over, niche_rand, niche_diff)
-niche =niche_rand #niche_all[(index-1)%3+1]
+# ### Testing niche
+# niche_over = fill(100.0, M, N)
+# niche_rand = fill(1.0, M, N)
+# niche_diff = ones(M, N)
+# rand_pos = randperm(M)
+# rand_pos_2 = randperm(M)
+# for i in 1:N 
+#     if i <= M
+#         i_con = rand_pos[i]
+#     else 
+#         i_con = rand_pos_2[i - M]
+#     end 
+#     niche_diff[i_con, i] = 100.0
+# end 
+# niche_all =(niche_over, niche_rand, niche_diff)
+# niche =niche_rand #niche_all[(index-1)%3+1]
 
 # progress = Progress(num_temps; desc="Progress running:")
 rich = Float64[]; all_sur = Vector{Vector{Float64}}(); all_ϵ =  Vector{Vector{Float64}}();
 all_ℵii = Vector{Vector{Float64}}(); all_ℵij = Vector{Vector{Float64}}(); all_ℵij_d = Vector{Vector{Float64}}(); all_uℵij = Vector{Vector{Float64}}(); all_lℵij = Vector{Vector{Float64}}();
 all_ℵii_sur =  Vector{Vector{Float64}}(); all_ℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_ℵij_d_sur =  Vector{Vector{Union{Float64, Missing}}}(); all_uℵij_sur = Vector{Vector{Union{Float64, Missing}}}(); all_lℵij_sur = Vector{Vector{Union{Float64, Missing}}}();
 all_r = Vector{Vector{Float64}}(); all_r_sur = Vector{Vector{Float64}}();
-all_leading = ComplexF64[]; all_H_leading = ComplexF64[]; all_Jac = Vector{Vector{ComplexF64}}(); diag_dominance = Float64[];
+all_leading = ComplexF64[]; all_H_leading = ComplexF64[]; all_Jac = Vector{Vector{Float64}}(); diag_dominance = Float64[];
 all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}(); all_u_sur = Vector{Vector{Float64}}()
 # RO =  Vector{Vector{Float64}}(); ulO =  Vector{Vector{Float64}}(); Rul =  Vector{Vector{Float64}}(); 
 # RO_sur = Vector{Vector{Union{Float64, Missing}}}(); ulO_sur = Vector{Vector{Union{Float64, Missing}}}(); Rul_sur = Vector{Vector{Union{Float64, Missing}}}(); 
@@ -62,7 +62,7 @@ for i in range(0, stop = 30, length = 31)
     T = 273.15 + i
     # next!(progress)
 
-    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche)
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)
     sol =solve(prob, AutoVern7(Rodas5()), save_everystep = true, callback=cb)

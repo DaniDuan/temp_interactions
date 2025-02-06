@@ -47,4 +47,4 @@ squeue
 watch sensors
 
 # adding in packages in Julia
-Pkg.add(["Distributions", "LinearAlgebra", "DifferentialEquations", "Plots", "StatsPlots","Sundials","Parameters","CSV","DataFrames","CairoMakie","LsqFit","Logging","TOML", "JLD2"])
+using Pkg; Pkg.add(["Distributions", "LinearAlgebra", "DifferentialEquations", "Plots", "StatsPlots","Sundials","Parameters","CSV","DataFrames","CairoMakie","LsqFit","Logging","TOML", "JLD2"])

@@ -55,18 +55,18 @@ cs = vcat(cscheme[1:16], cscheme1[2:16])
 f = Figure(fontsize = 30, size = (1800, 1200));
 Label(f[1,0], "Minimal Trade-off", fontsize = 50, rotation = pi/2)
 ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-lines!(ax1, Temp_rich, αii_0, color = ("#FA8328", 0.8), linewidth = 5, label = "αii")
+lines!(ax1, Temp_rich, αii_0, color = ("#FA8328", 0.8), linewidth = 5, label = L"α_{ii}")
 band!(ax1, Temp_rich, αii_0 .- αii_err_0, αii_0 .+ αii_err_0, color = ("#FA8328", 0.2))
-lines!(ax1, Temp_rich, αij_0, color = ("#015845", 0.8), linewidth = 5, label = "αij")
+lines!(ax1, Temp_rich, αij_0, color = ("#015845", 0.8), linewidth = 5, label = L"α_{i≠j}")
 band!(ax1, Temp_rich,  αij_0 .- αij_err_0, αij_0 .+ αij_err_0, color = ("#015845", 0.2))
 axislegend(position = :lb)
 Label(f[1,1, TopLeft()], "(a)")
-ax2 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing), xlabel = "log(|αᵢᵢ|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+ax2 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{ii}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
 for i in 1: 31
     density!(ax2, log.(abs.(all_ii_collect_0[i])), color = (cs[i], 0.2), strokewidth = 3, strokecolor = (cs[i], 0.7))
 end 
 Label(f[1,2, TopLeft()], "(b)")
-ax3 = Axis(f[1,3], limits = ((-22.0, 3.0), nothing), xlabel = "log(|αᵢⱼ|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+ax3 = Axis(f[1,3], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{i≠j}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
 for i in 1: 31
     density!(ax3, log.(abs.(all_ij_collect_0[i])), color = (cs[i], 0.3), strokewidth = 3, strokecolor = (cs[i], 0.5))
 end 
@@ -76,18 +76,18 @@ Label(f[1,3, TopLeft()], "(c)")
 Label(f[2,0], "Maximal Trade-off", fontsize = 50, rotation = pi/2)
 ax4 = Axis(f[2,1],
     xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
-lines!(ax4, Temp_rich, αii_1, color = ("#FA8328", 0.8), linewidth = 5, label = "αii")
+lines!(ax4, Temp_rich, αii_1, color = ("#FA8328", 0.8), linewidth = 5, label = L"α_{ii}")
 band!(ax4, Temp_rich, αii_1 .- αii_err_1, αii_1 .+ αii_err_1, color = ("#FA8328", 0.2))
-lines!(ax4, Temp_rich, αij_1, color = ("#015845", 0.8), linewidth = 5, label = "αij")
+lines!(ax4, Temp_rich, αij_1, color = ("#015845", 0.8), linewidth = 5, label = L"α_{i≠j}")
 band!(ax4, Temp_rich,  αij_1 .- αij_err_1, αij_1 .+ αij_err_1, color = ("#015845", 0.2))
 axislegend(position = :lb)
 Label(f[2,1, TopLeft()], "(d)")
-ax5 = Axis(f[2,2], limits = ((-22.0, 3.0), nothing), xlabel = "log(|αᵢᵢ|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+ax5 = Axis(f[2,2], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{ii}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
 for i in 1: 31
     density!(ax5, log.(abs.(all_ii_collect_1[i])), color = (cs[i], 0.2), strokewidth = 3, strokecolor = (cs[i], 0.7))
 end 
 Label(f[2,2, TopLeft()], "(e)")
-ax6 = Axis(f[2,3], limits = ((-22.0, 3.0), nothing), xlabel = "log(|αᵢⱼ|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+ax6 = Axis(f[2,3], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{i≠j}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
 for i in 1: 31
     density!(ax6, log.(abs.(all_ij_collect_1[i])), color = (cs[i], 0.3), strokewidth = 3, strokecolor = (cs[i], 0.5))
 end 

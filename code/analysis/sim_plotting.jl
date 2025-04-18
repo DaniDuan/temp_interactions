@@ -13,8 +13,9 @@ col_names_EF = ["αii", "αii_err", "αij", "αij_err", "αij_d", "αij_d_err", 
                 "diag_dom", "diag_dom_err",
                 "Jac_diag", "Jac_diag_err", "radius", "radius_err"];
 rename!(Eff_results, col_names_EF)
-@load "../results/Feas_CR_dist_p-1_new.jld2" all_Rrela_collect all_Crela_collect all_R_collect all_C_collect all_ii_collect all_ij_collect all_ii_sur_collect all_ij_sur_collect all_r_collect all_r_sur_collect
+@load "../results/Feas_CR_dist_p0_new.jld2" all_Rrela_collect all_Crela_collect all_R_collect all_C_collect all_ii_collect all_ij_collect all_ii_sur_collect all_ij_sur_collect all_r_collect all_r_sur_collect
 
+num_temps = 31
 Temp_rich = range(0, num_temps-1, length = num_temps)
 temp = collect(Temp_rich .+ 273.15)
 temp_R = vcat([repeat([Temp_rich[t]], length(all_R_collect[t])) for t in 1:num_temps]...)
@@ -67,7 +68,7 @@ save("../results/biomass_r-1.pdf", f)
 # save("../results/αR-1.pdf", f) 
 
 f = Figure(fontsize = 35, size = (1200, 900));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax1 = Axis(f[1,1], title = "Minimal Trade-off", xlabel = "Temperature (°C)", ylabel = "Resource Abundance", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
 ax2 = Axis(f[1,1], ylabel = "Consumer Abundance", xlabelsize = 50, ylabelsize = 50, yaxisposition = :right, yticklabelalign = (:left, :center), ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 hidespines!(ax2)
 lines!(ax1, Temp_rich, meanR, color =( "#F8BA17", 0.9), linewidth = 5, label = "")

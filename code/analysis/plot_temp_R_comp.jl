@@ -59,7 +59,7 @@ R_err_1 = [std(all_R_collect_1[t])/sqrt(length(all_R_collect_1[t])) for t in 1: 
 ############## plotting ##############
 f = Figure(fontsize = 35, size = (2400, 900));
 # Label(f[0,1], "Minimal Trade-off", fontsize = 50)
-ax1 = Axis(f[1,1], title = "Minimal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αji/αii)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax1 = Axis(f[1,1], title = "Minimal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
 ax2 = Axis(f[1,1], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 hidespines!(ax2)
 # hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
@@ -73,10 +73,10 @@ text!(ax1, 0, 1.05, text = "↑ αⱼᵢ > αᵢᵢ", align = (:left, :center),f
 text!(ax1, 0, 0.95, text = "↓ αⱼᵢ < αᵢᵢ", align = (:left, :center),fontsize = 30)
 l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
 l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "αji/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,1, TopLeft()], "(a)")
 
-ax3 = Axis(f[1,2], title = "Maximal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αji/αii)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+ax3 = Axis(f[1,2], title = "Maximal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
 ax4 = Axis(f[1,2], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 hidespines!(ax2)
 # hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
@@ -88,7 +88,7 @@ linkxaxes!(ax1,ax2)
 lines!(ax3, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
 text!(ax3, 0, 1.05, text = "↑ αⱼᵢ > αᵢᵢ", align = (:left, :center),fontsize = 30)
 text!(ax3, 0, 0.95, text = "↓ αⱼᵢ < αᵢᵢ", align = (:left, :center),fontsize = 30)
-Legend(f[1,2], [l1, l2], tellheight = false, tellwidth = false, [ "αji/αii", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+Legend(f[1,2], [l1, l2], tellheight = false, tellwidth = false, [L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,2, TopLeft()], "(b)")
 f
 

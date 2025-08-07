@@ -34,7 +34,7 @@ all_r = Vector{Vector{Float64}}(); all_r_sur = Vector{Vector{Float64}}()
 progress = Progress(num_temps; desc="Progress running:")
 for i in range(0, stop = num_temps-1, length = num_temps)
     T = 273.15 + i
-    Random.seed!(6)
+    # Random.seed!(6)
     p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche)
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)

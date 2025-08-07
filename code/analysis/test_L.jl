@@ -162,7 +162,7 @@ rich_collect_1 = Vector{Vector{Float64}}(); all_ℵii_collect_1 = Vector{Vector{
     for i in 1:length(path)
         @load path[i]  rich all_ℵii all_ℵij
         push!(rich_H, rich[j]); append!(all_ℵii_H, all_ℵii[j]); append!(all_ℵij_H, all_ℵij[j])
-        next!(progress)
+        # next!(progress)
     end 
     push!(rich_collect_1, rich_H); push!(all_ℵii_collect_1, all_ℵii_H); push!(all_ℵij_collect_1, all_ℵij_H)
 end 
@@ -246,3 +246,73 @@ band!(ax1, Temp_rich,  ij_mean .- ij_err, ij_mean .+ ij_err, color = ("#015845",
 axislegend(position = :lb)
 # Label(f[1,1, TopLeft()], "(d)")
 f
+
+
+
+function random_matrix(N::Int; μ_off=0, σ²_off=0.1)
+    A = Matrix{Float64}(undef, N, N)
+    for i in 1:N, j in 1:N
+        A[i, j] = i == j ? -1.0 : randn() * sqrt(σ²_off) + μ_off
+    end
+    return A
+end
+
+# Example usage
+M = random_matrix(1)
+eigen(M_low).values
+
+stability_all = Float64[]
+for N in 1:5:50
+    leading_all = ComplexF64[]
+    for i in 1:100
+        M = random_matrix(N)
+        eigens = eigen(M).values
+        leading = eigens[argmax(real.(eigens))]
+        append!(leading_all, leading)
+    end 
+    stability = sum(real.(leading_all) .< 0) / 100
+    append!(stability_all, stability)
+end 
+
+f = Figure(fontsize = 35, size = (800, 600));
+ax1 = Axis(f[1,1], xlabel = "Richness (S)", ylabel = "p(Stability)", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+lines!(ax1,1:5:50, stability_all, color=:black, linewidth=3)
+f
+
+M = random_matrix(1000)
+eigens = eigen(M).values
+
+x = real.(eigens)
+y = imag.(eigens)
+
+# Compute centroid
+x0 = mean(x)
+y0 = mean(y)
+
+# Compute max radius from centroid
+r = maximum(sqrt.((x .- x0).^2 .+ (y .- y0).^2))
+
+# Circle coordinates
+θ = range(0, 2π; length=500)
+x_circle = x0 .+ r * cos.(θ)
+y_circle = y0 .+ r * sin.(θ)
+
+# Plot
+f = Figure(fontsize = 30,resolution = (600, 600));
+ax = Axis(f[1, 1],
+    xlabel="Real(λ)", ylabel="Imaginary(λ)", title="Circular Law",
+    # xlabelsize=35, ylabelsize=30, titlesize=24,
+    aspect=1
+)
+scatter!(ax, x, y, markersize=5)
+lines!(ax, x_circle, y_circle, color=:gray, linewidth=1.5)
+vlines!(ax, [0], color=:black, linestyle=:dash, linewidth=1)
+scatter!(ax, [x0], [y0], color=:black, markersize=8)
+# text!(ax, L"\sigma\sqrt{Sc}",
+#     position = (x0, y0 - 0.05r),
+#     align = (:center, :top),
+#     fontsize = 25
+# )
+
+f
+save("../results/circ_law.svg", f) 

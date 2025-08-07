@@ -304,3 +304,30 @@ f
 # CairoMakie.save("scatter_with_ellipse.png")
 
 
+
+##################
+everything = zeros(Float64, num_temps, 16)
+@time for i in range(0, stop = num_temps-1, length = num_temps)
+        T = 273.15 + i 
+        # all = Float64[]; all_pred = Float64[]; ϵ_sur = Float64[]; ϵ_ext = Float64[]; #Eϵ_sur = Float64[]; Eϵ_ext = Float64[]; 
+        # ϵ_var = Float64[]; u_sur = Float64[]; u_ext = Float64[]; m_sur = Float64[]; m_ext = Float64[]
+        ϵ_sur = Float64[]; biomass = Float64[]; r_all = Float64[]; 
+        for j in 1:50
+            ## generate params
+            p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed)
+            ## run simulation
+            prob = ODEProblem(dxx!, x0, tspan, p)
+            sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
+            bm = sol.u[length(sol.t)][1:N]
+            ϵ = (p.u * x0[N+1:N+M] .* (1 .- p.L) .- p.m) ./ (p.u * x0[N+1:N+M])
+            p_lv = Eff_LV_params(p=p, sol=sol);
+
+            ### 
+            append!(ϵ_sur, ϵ[bm.>1e-7]) #CUE
+            append!(biomass, bm[bm.>1e-7])
+            append!(r_all, p_lv.r[bm.>1e-7])
+        end
+    end # 2 hours 
+
+    plot(ϵ_sur, biomass)
+    plot(ϵ_sur, r_all)

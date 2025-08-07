@@ -107,7 +107,7 @@ save("../results/MCM_ELV_dynamics.pdf", f)
 
 
 ################## heatmap ######################
-N = 100; M = 50
+N = 20; M = 20
 niche_over = fill(100.0, M, N)
 niche_rand = fill(1.0, M, N)
 

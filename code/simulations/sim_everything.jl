@@ -52,9 +52,14 @@ everything = DataFrame(everything, col_names);
 
 ### Saving results
 # CSV.write("../data/temp_gradient.csv", everything, writeheader=false)
-
-# everything = CSV.read("../data/temp_gradient.csv", DataFrame, header=false)
-# rename!(everything, col_names)
+###################
+col_names = ["richness", "richness_err", "feas", "feas_err", "ELV", "ELV_err", "Shannon", "Shannon_err", "Simpson", "Simpson_err",
+            "ϵ_sur_mean", "ϵ_sur_err", "ϵ_ext_mean", "ϵ_ext_err", "ϵ", "ϵ_err","ϵ_var_mean", "ϵ_var_err", "ϵ_r0", "ϵ_r0_err",
+            "Eu", "Eu_err", "Em", "Em_err", "Eu_sur", "Eu_sur_err", "Em_sur", "Em_sur_err",
+            "Tpu", "Tpu_err", "Tpm", "Tpm_err", "Tpu_sur", "Tpu_sur_err", "Tpm_sur", "Tpm_sur_err", 
+            "u_sur_mean", "u_sur_err", "u_ext_mean", "u_ext_err", "m_sur_mean", "m_sur_err", "m_ext_mean", "m_ext_err"];
+everything = CSV.read("../../div_cue_paper/data/temp_gradient.csv", DataFrame, header=false)
+rename!(everything, col_names)
 
 # rich temp 
 Temp_rich = range(0, num_temps-1, length = num_temps)

@@ -45,9 +45,10 @@ function generate_params(N, M; f_m=def_m, f_ρ=def_ρ, f_ω=def_ω, f_u=def_u, f
      # resources
      ρ = f_ρ(N, M, kw)
      ω = f_ω(N, M, kw)
+     Kc = fill(5, M)
 
      kw_nt = (; kwargs...)
-     p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, λ=λ, L = L, B, E, Tp)
+     p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, Kc = Kc, λ=λ, L = L, B, E, Tp)
     #  p_nt = (N=N, M=M, u=u, m=m, l=l, ρ=ρ, ω=ω, λ=λ)
 
      out = Base.merge(p_nt, kw_nt)

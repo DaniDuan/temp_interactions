@@ -7,7 +7,7 @@ idx = collect(CartesianIndices(zeros(Float64, N, N)))
 ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
 
 ############## collecting results ##############
-path_0 = glob("Eff_iters*", "../data/Eff_p0_Umatrix/")
+path_0 = glob("Eff_iters*", "../data/Eff_p0_nol/")
 progress = Progress(length(path_0)*num_temps; desc="Progress running:")
 num_temps = 31
 dℵij_collect_0 = Vector{Vector{Float64}}() ; all_R_collect_0 = Vector{Vector{Float64}}();
@@ -26,24 +26,24 @@ dℵij_collect_0 = Vector{Vector{Float64}}() ; all_R_collect_0 = Vector{Vector{F
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
 
-path_1 = glob("Eff_iters*", "../data/Eff_p-1_Umatrix/")
-progress = Progress(length(path_1)*num_temps; desc="Progress running:")
-num_temps = 31
-dℵij_collect_1 = Vector{Vector{Float64}}() ; all_R_collect_1 = Vector{Vector{Float64}}();
-@time for j in 1: num_temps
-    dℵij_H = Float64[]; all_R_H = Float64[];
-    for i in 1:length(path_1)
-        @load path_1[i]  all_ℵii all_ℵij all_R
-        A = zeros(Float64, N, N)
-        A[ind_off] = all_ℵij[j]
-        A[diagind(A)] = all_ℵii[j]
-        dℵij = [A[j, i]/A[j, j] for i in 1:N for j in 1:N if j != i]
-        append!(dℵij_H, dℵij); append!(all_R_H, all_R[j]); 
-        next!(progress)
-    end 
-    push!(dℵij_collect_1, dℵij_H); push!(all_R_collect_1, all_R_H);
-end 
-R"library(beepr); beep(sound = 4, expr = NULL)"
+# path_1 = glob("Eff_iters*", "../data/Eff_p-1_Umatrix/")
+# progress = Progress(length(path_1)*num_temps; desc="Progress running:")
+# num_temps = 31
+# dℵij_collect_1 = Vector{Vector{Float64}}() ; all_R_collect_1 = Vector{Vector{Float64}}();
+# @time for j in 1: num_temps
+#     dℵij_H = Float64[]; all_R_H = Float64[];
+#     for i in 1:length(path_1)
+#         @load path_1[i]  all_ℵii all_ℵij all_R
+#         A = zeros(Float64, N, N)
+#         A[ind_off] = all_ℵij[j]
+#         A[diagind(A)] = all_ℵii[j]
+#         dℵij = [A[j, i]/A[j, j] for i in 1:N for j in 1:N if j != i]
+#         append!(dℵij_H, dℵij); append!(all_R_H, all_R[j]); 
+#         next!(progress)
+#     end 
+#     push!(dℵij_collect_1, dℵij_H); push!(all_R_collect_1, all_R_H);
+# end 
+# R"library(beepr); beep(sound = 4, expr = NULL)"
 
 ############## analysing ##############
 αij_d_0 = [mean(dℵij_collect_0[t]) for t in 1:num_temps]
@@ -51,48 +51,48 @@ R"library(beepr); beep(sound = 4, expr = NULL)"
 meanR_0 = [mean(all_R_collect_0[t]) for t in 1:num_temps]
 R_err_0 = [std(all_R_collect_0[t])/sqrt(length(all_R_collect_0[t])) for t in 1: num_temps]
 
-αij_d_1 = [mean(dℵij_collect_1[t]) for t in 1:num_temps]
-αij_d_err_1 = [std(dℵij_collect_1[t])/sqrt(length(dℵij_collect_1[t])) for t in 1: num_temps]
-meanR_1 = [mean(all_R_collect_1[t]) for t in 1:num_temps]
-R_err_1 = [std(all_R_collect_1[t])/sqrt(length(all_R_collect_1[t])) for t in 1: num_temps]
+# αij_d_1 = [mean(dℵij_collect_1[t]) for t in 1:num_temps]
+# αij_d_err_1 = [std(dℵij_collect_1[t])/sqrt(length(dℵij_collect_1[t])) for t in 1: num_temps]
+# meanR_1 = [mean(all_R_collect_1[t]) for t in 1:num_temps]
+# R_err_1 = [std(all_R_collect_1[t])/sqrt(length(all_R_collect_1[t])) for t in 1: num_temps]
 
 ############## plotting ##############
-f = Figure(fontsize = 35, size = (2400, 900));
+f = Figure(fontsize = 35, size = (1200, 900));
 # Label(f[0,1], "Minimal Trade-off", fontsize = 50)
 ax1 = Axis(f[1,1], title = "Minimal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-# ax2 = Axis(f[1,1], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-# hidespines!(ax2)
-# hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
+ax2 = Axis(f[1,1], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
 lines!(ax1, Temp_rich, αij_d_0, color = ("#376298",0.8), linewidth = 5, label = "")
 band!(ax1, Temp_rich, αij_d_0 .- αij_d_err_0 , αij_d_0.+ αij_d_err_0, color = ("#376298", 0.3))
-# lines!(ax2, Temp_rich, meanR_0, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
-# band!(ax2, Temp_rich, meanR_0 .- R_err_0 , meanR_0 .+ R_err_0 , color = ("#F8BA17", 0.5))
-# linkxaxes!(ax1,ax2)
+lines!(ax2, Temp_rich, meanR_0, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
+band!(ax2, Temp_rich, meanR_0 .- R_err_0 , meanR_0 .+ R_err_0 , color = ("#F8BA17", 0.5))
+linkxaxes!(ax1,ax2)
 lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
 text!(ax1, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
 text!(ax1, 0, 0.95, text = L"↓ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
-# l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
-# l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
-# Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+l1 = [LineElement(color = ("#376298", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#F8BA17", 0.9), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,1, TopLeft()], "(a)")
-
-ax3 = Axis(f[1,2], title = "Maximal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
-# ax4 = Axis(f[1,2], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-# hidespines!(ax2)
-# hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
-lines!(ax3, Temp_rich, αij_d_1, color = ("#376298",0.8), linewidth = 5, label = "")
-band!(ax3, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#376298", 0.3))
-# lines!(ax4, Temp_rich, meanR_1, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
-# band!(ax4, Temp_rich, meanR_1 .- R_err_1 , meanR_1 .+ R_err_1 , color = ("#F8BA17", 0.5))
-# linkxaxes!(ax3,ax4)
-lines!(ax3, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
-text!(ax3, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
-text!(ax3, 0, 0.95, text = L"↑ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
-# Legend(f[1,2], [l1, l2], tellheight = false, tellwidth = false, [L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
-Label(f[1,2, TopLeft()], "(b)")
 f
 
-save("../results/α_withoutR.pdf", f) 
+# ax3 = Axis(f[1,2], title = "Maximal Trade-off", xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 50, ylabelsize = 50, ygridvisible = true, xgridvisible = true)
+# # ax4 = Axis(f[1,2], ylabel = "Resource Abundance", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 50, ylabelsize = 50, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+# # hidespines!(ax2)
+# # hidedecorations!(ax3, grid = false, ticks = true, ticklabels = true)
+# lines!(ax3, Temp_rich, αij_d_1, color = ("#376298",0.8), linewidth = 5, label = "")
+# band!(ax3, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#376298", 0.3))
+# # lines!(ax4, Temp_rich, meanR_1, color =( "#F8BA17", 0.9), linewidth = 5, label = "")
+# # band!(ax4, Temp_rich, meanR_1 .- R_err_1 , meanR_1 .+ R_err_1 , color = ("#F8BA17", 0.5))
+# # linkxaxes!(ax3,ax4)
+# lines!(ax3, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+# text!(ax3, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
+# text!(ax3, 0, 0.95, text = L"↑ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
+# # Legend(f[1,2], [l1, l2], tellheight = false, tellwidth = false, [L"α_{j≠i; j = 1,...,N}/α_{ii} ", "Resource"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+# Label(f[1,2, TopLeft()], "(b)")
+# f
+
 # save("../results/αR.pdf", f) 
 
 # ########### 

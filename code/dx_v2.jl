@@ -14,11 +14,23 @@ function growth_MiCRM!(dx, x, p, t, i)
 end
 
 function supply_MiCRM!(dx, x, p, t, α)
-
-    # inflow - outflow
-    dx[α + p.N] = p.ρ[α] - (x[α + p.N] * p.ω[α])
-
+    if p.input_type == "constant"
+        dx[α + p.N] = p.ρ[α]
+    elseif p.input_type == "leaching"
+        dx[α + p.N] = p.ρ[α] - (x[α + p.N] * p.ω[α])
+    elseif p.input_type == "chemostat"
+        dx[α + p.N] = p.ω[α] * (p.Kc[α] - x[α + p.N])
+    elseif p.input_type == "self-renewing"
+        r_self = fill(1,p.M) .* exp.((-0.32./0.0000862) * ((1/p.T)-(1/283.15)))./(1 .+ (0.32./(3.5 .- 0.32)) .* exp.(3.5/0.0000862 * (1 ./(273.15+25) .- 1/p.T)))
+        dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
+    end 
 end
+
+# x = sol.u[length(sol.t)-65]
+# p.ρ[α]
+# p.ρ[α] - (x[α + p.N] * p.ω[α])
+# p.ω[α] * (p.Kc[α] - x[α + p.N])
+# (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
 
 function depletion_MiCRM!(dx, x, p, t, i, α)
 
@@ -57,7 +69,7 @@ function dx!(dx, x, p, t;
         # loop over consumers
         for i = 1:p.N
             if x[i] > 1e-5
-                depletion!(dx, x, p, t, α, i)
+                depletion!(dx, x, p, t, i, α)
             end
         end
     end
@@ -79,7 +91,17 @@ function dxx!(dx, x, p, t)
     end
     for α = 1:p.M
         dx[α + p.N] = 0.0
-        dx[α + p.N] = p.ρ[α] - (x[α + p.N] * p.ω[α])
+        if p.input_type == "constant"
+            dx[α + p.N] = p.ρ[α]
+        elseif p.input_type == "leaching"
+            dx[α + p.N] = p.ρ[α] - (x[α + p.N] * p.ω[α])
+        elseif p.input_type == "chemostat"
+            dx[α + p.N] = p.ω[α] * (p.Kc[α] - x[α + p.N])
+        elseif p.input_type == "self-renewing"
+            r_self = fill(1,p.M) .* exp.((-0.32./0.0000862) * ((1/p.T)-(1/283.15)))./(1 .+ (0.32./(3.5 .- 0.32)) .* exp.(3.5/0.0000862 * (1 ./(273.15+25) .- 1/p.T)))
+            dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
+        end 
+
 
         for i=1:p.N
             dx[α + p.N] += -p.u[i, α]*x[α+p.N]*x[i]

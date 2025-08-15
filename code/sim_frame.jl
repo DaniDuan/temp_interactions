@@ -22,7 +22,7 @@ include("LV_dx.jl") # Defines LV differential equatons, use LV_dx
 
 include("temp.jl")
 
-include("EFF_LV_p_opt.jl")
+include("Eff_LV_p_opt.jl")
 
 include("Jacobian.jl")
 
@@ -42,7 +42,8 @@ function F_ρ(N, M, kw)
 end
 
 function F_ω(N, M, kw)
-    ω = zeros(M)
+    # ω = zeros(M)
+    ω = fill(0.3, M)
     return ω
 end
 

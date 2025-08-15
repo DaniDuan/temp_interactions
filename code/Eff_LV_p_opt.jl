@@ -28,8 +28,15 @@ function Eff_LV_params(; p, sol) #, verbose = false
     r = zeros(N) # Effective growth rates
 
 ## Calculating the A matrix from MiCRM parameters and equilibrium solutions
-    A = [(-ω[α] + sum(l[i, α, β] * u[i, β] * Ceq[i] - u[i, β] * Ceq[i] * δ(α, β) for i in 1:N)) for α in 1:M, β in 1:M]
-    
+    if p.input_type == "self-renewing"
+        R_all = sol.u[length(sol.t)][N+1:N+M]
+        r_self = fill(1,p.M) .* exp.((-0.32./0.0000862) * ((1/p.T)-(1/283.15)))./(1 .+ (0.32./(3.5 .- 0.32)) .* exp.(3.5/0.0000862 * (1 ./(273.15+25) .- 1/p.T)))
+        A = [(r_self[α] - 2*r_self[α]/p.Kc[α] * R_all[α] + sum(l[i, α, β] * u[i, β] * Ceq[i] - u[i, β] * Ceq[i] * δ(α, β) for i in 1:N)) for α in 1:M, β in 1:M]
+    elseif p.input_type == "constant"
+        A = [(sum(l[i, α, β] * u[i, β] * Ceq[i] - u[i, β] * Ceq[i] * δ(α, β) for i in 1:N)) for α in 1:M, β in 1:M]
+    else 
+        A = [(-ω[α] + sum(l[i, α, β] * u[i, β] * Ceq[i] - u[i, β] * Ceq[i] * δ(α, β) for i in 1:N)) for α in 1:M, β in 1:M]
+    end 
 ## Precompute repeated values
     invA = inv(A)
     A_thing = u .* (1 .- λ) 

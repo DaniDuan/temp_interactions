@@ -2,9 +2,10 @@ include("./fitting.jl");
 # using ProgressMeter
 N=100
 M=50
-L = fill(0.0, N)
+L = fill(0.3, N)
 ### Temp params 
-num_temps = 38
+# num_temps = 38
+num_temps = 37
 Tr=273.15+10; Ed=3.5 
 
 Temp_rich = range(0, num_temps-1, length = num_temps)
@@ -17,7 +18,7 @@ index_str = ENV["SLURM_ARRAY_TASK_ID"]
 # Convert the string to a numeric value (e.g., Integer)
 index = parse(Int, index_str)
 
-@load "../data/1com0_rho3.jld2" all_ℵij
+@load "../data/1com0_rho4.jld2" all_ℵij
 # f = Figure()
 # ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "upper/lower")
 # Nα, B_m, E_m, T_m, Ed,temp_all, allα = get_init_param(all_ℵij, num_temps)
@@ -51,7 +52,7 @@ for n in 1:10
 end
 
 
-@save "../results/20250815/inter_ij_0_rho/fit_allij_0_rho3_$(index).jld2" fitted
+@save "../results/20250817/inter_ij_0_rho/fit_allij_0_rho4_$(index).jld2" fitted
 # df_names = ["B0","E","Th","Ed","AIC","r2"]
 # fitted = DataFrame(fitted, df_names);
 # CSV.write("../results/αij_fitted-1.csv", fitted, writeheader=false)

@@ -50,7 +50,8 @@ mean_ij = zeros(7, num_temps); mean_ijerr = zeros(7, num_temps);
 mean_d = zeros(7, num_temps); mean_derr = zeros(7, num_temps);
 # progress = Progress(length(path)*num_temps*7; desc="Progress running:")
 for leakage in 1:7
-    path = glob("*L$(leakage)*", "../data/L0/")
+    # path = glob("*L$(leakage)*", "../data/L0/")
+    path = glob("*L$(leakage-1)*", "../data/p0_L/")
     num_temps = 31
     all_ii_collect = Vector{Vector{Float64}}(); all_ij_collect = Vector{Vector{Float64}}(); all_ℵij_d_collect = Vector{Vector{Float64}}()
     @time for j in 1: num_temps
@@ -84,11 +85,11 @@ for leakage in 1:7
     lines!(ax, Temp_rich,mean_ii[leakage,:], color = (cs[leakage], 0.8), linewidth = 5, label = "L = $(leakage * 0.1)")
     band!(ax, Temp_rich, mean_ii[leakage,:] .- mean_iierr[leakage,:], mean_ii[leakage,:] .+ mean_iierr[leakage,:], color = (cs[leakage], 0.3))
 end 
-Colorbar(f[1,2], colorrange = [0.1, 0.7], colormap = cs, label = "Leakage")
+Colorbar(f[1,2], colorrange = [0, 0.72], colormap = cs, label = "Leakage")
 # Label(f[1,1, TopLeft()], (a))
 # Label(f[1,1, TopLeft()], "realistic ρ")
 f
-save("../results/ii_L0.pdf", f) 
+save("../results/ii_L0_with0.pdf", f) 
 
 f = Figure(fontsize = 35, size = (1200, 900));
 ax = Axis(f[1,1], title = "Minimal Trade-off", xlabel = "Temperature (°C)", ylabel = L"α_{i≠j}", xlabelsize = 50, ylabelsize = 50)
@@ -100,7 +101,7 @@ Colorbar(f[1,2], colorrange = [0.1, 0.7], colormap = cs, label = "Leakage")
 # Label(f[1,1, TopLeft()], "ρ = -1")
 # Label(f[1,1, TopLeft()], "realistic ρ")
 f
-save("../results/ij_L0.pdf", f) 
+save("../results/ij_L0_with0.pdf", f) 
 
 # f = Figure(fontsize = 35, size = (1200, 900));
 # ax = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "αᵢᵢ", xlabelsize = 50, ylabelsize = 50)

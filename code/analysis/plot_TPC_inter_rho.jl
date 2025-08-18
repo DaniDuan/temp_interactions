@@ -65,20 +65,20 @@ all_ind = vcat(ind_diag, ind_off)
 
 p_0 = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=273.15 + 25, ρ_t=[0.0000 0.0000], Tr=Tr, Ed=Ed)
 
-# ##########################################
+##########################################
 # progress = Progress(990; desc="Progress running:")
 # fitted_all = zeros(Float64, 9900, 6)
 # for index in 1: 990
 #     next!(progress)
 #     # @load "../results/fit_allij_0_new/fit_allij_0_$(index).jld2" fitted
-#     @load "../results/inter_ij_0_rho/fit_allij_0_rho3_$(index).jld2" fitted
+#     @load "../results/inter_ij0_rho/fit_allij_0_rho4_$(index).jld2" fitted
 #     i = 10*(index-1) + 10
 #     fitted_all[10*(index-1)+1:i,:] = fitted
 # end 
 
 # df_names = ["B0","E","Th","Ed","AIC","r2"]
 # fitted_all = DataFrame(fitted_all, df_names);
-# CSV.write("../results/αij_fitted_rho3.csv", fitted_all, writeheader=false)
+# CSV.write("../results/αij_fitted_rho4.csv", fitted_all, writeheader=false)
 
 # # fitted_all_filter = fitted_all[fitted_all.B0 .> 0, :]
 # # fitted_all_filter = fitted_all_filter[fitted_all_filter.E .> 0, :]
@@ -133,6 +133,7 @@ fitted_0ij_rho4 = filter_fitted(path_ij_rho4[1], p_0)
 fitted_0_rho4 = vcat(fitted_0ii_rho4[:,1:7], fitted_0ij_rho4)
 
 #################### PLOTTING ##############################
+# num_temps = 38; Temp_rich = range(0, num_temps-1, length = num_temps); temp = collect(Temp_rich .+273.15)
 
 f = Figure(fontsize = 30, size = (1800, 1900));
 p1 = [PolyElement(color = ("#FF9776", 0.6), strokecolor = "#FF9776", strokewidth = 3)]
@@ -270,17 +271,17 @@ Label(f[2,2, TopLeft()], "(e)")
 
 ax6 = Axis(f[2,3], xlabel = "Tₚₖ", ylabel = "Density", xlabelsize = 35, ylabelsize = 35, ygridvisible = false, xgridvisible = false)
 density!(ax6, p_0.Tp[:,1] .- 273.15, label = "Tpu", color = ("#82AC6D", 0.5), strokewidth = 3, strokecolor = "#82AC6D")
-lines!(ax6, [median(p_0.Tp[:,1])- 273.15, median(p_0.Tp[:,1])- 273.15], [0, 0.13], linestyle = :dash, color = ("#12473D", 0.9), linewidth = 5)
+lines!(ax6, [median(p_0.Tp[:,1])- 273.15, median(p_0.Tp[:,1])- 273.15], [0, 0.14], linestyle = :dash, color = ("#12473D", 0.9), linewidth = 5)
 lines!(ax6, [20, median(p_0.Tp[:,1])- 273.15],[0.085, 0.085], linestyle = :dot, color = ("#12473D", 0.9), linewidth = 3)
 text!(ax6, 20, 0.085, text = "$(round(median(p_0.Tp[:,1])- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#12473D")
 
 density!(ax6, p_0.Tp[:,2] .- 273.15, label = "Tpm", color = ("#C1C6E8", 0.6), strokewidth = 3, strokecolor = "#C1C6E8")
-lines!(ax6, [median(p_0.Tp[:,2])- 273.15, median(p_0.Tp[:,2])- 273.15], [0, 0.13], linestyle = :dash, color = ("#9585B4", 0.9), linewidth = 5)
+lines!(ax6, [median(p_0.Tp[:,2])- 273.15, median(p_0.Tp[:,2])- 273.15], [0, 0.14], linestyle = :dash, color = ("#9585B4", 0.9), linewidth = 5)
 lines!(ax6, [20, median(p_0.Tp[:,2])- 273.15],[0.05, 0.05], linestyle = :dot, color = ("#9585B4", 0.9), linewidth = 3)
 text!(ax6, 20, 0.05, text = "$(round(median(p_0.Tp[:,2])- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#9585B4")
 
 density!(ax6, fitted_0_rho3.Th .- 273.15, label = "Tpα", color = ("#5676A5", 0.8), strokewidth = 3, strokecolor = "#5676A5")
-lines!(ax6, [median(fitted_0_rho3.Th)- 273.15, median(fitted_0_rho3.Th)- 273.15], [0, 0.13], linestyle = :dash, color = ("#0758AE", 0.9), linewidth = 5)
+lines!(ax6, [median(fitted_0_rho3.Th)- 273.15, median(fitted_0_rho3.Th)- 273.15], [0, 0.14], linestyle = :dash, color = ("#0758AE", 0.9), linewidth = 5)
 lines!(ax6, [20, median(fitted_0_rho3.Th)- 273.15],[0.095, 0.095], linestyle = :dot, color = ("#0758AE", 0.9), linewidth = 3)
 text!(ax6, 20, 0.095, text = "$(round(median(fitted_0_rho3.Th)- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#0758AE")
 
@@ -288,6 +289,10 @@ Legend(f[2,3], [p4, p5, p6], tellheight = false, tellwidth = false, [ "Tpu", "Tp
 Label(f[2,3, TopLeft()], "(f)")
 
 ################  rho4: self-renewing resource ##### 
+# num_temps = 37; Temp_rich = range(0, num_temps-1, length = num_temps); temp = collect(Temp_rich .+273.15)
+
+# f = Figure(fontsize = 30, size = (1800, 1900));
+
 Label(f[3,0], "Self-renewing Resource", fontsize = 50, rotation = pi/2)
 Box(f[3,1], linestyle = :solid, color = :white)
 for i in 1:25
@@ -342,17 +347,17 @@ Label(f[3,2, TopLeft()], "(h)")
 
 ax9 = Axis(f[3,3], xlabel = "Tₚₖ", ylabel = "Density", xlabelsize = 35, ylabelsize = 35, ygridvisible = false, xgridvisible = false)
 density!(ax9, p_0.Tp[:,1] .- 273.15, label = "Tpu", color = ("#82AC6D", 0.5), strokewidth = 3, strokecolor = "#82AC6D")
-lines!(ax9, [median(p_0.Tp[:,1])- 273.15, median(p_0.Tp[:,1])- 273.15], [0, 0.9], linestyle = :dash, color = ("#12473D", 0.9), linewidth = 5)
+lines!(ax9, [median(p_0.Tp[:,1])- 273.15, median(p_0.Tp[:,1])- 273.15], [0, 1.05], linestyle = :dash, color = ("#12473D", 0.9), linewidth = 5)
 lines!(ax9, [20, median(p_0.Tp[:,1])- 273.15],[0.5, 0.5], linestyle = :dot, color = ("#12473D", 0.9), linewidth = 3)
 text!(ax9, 20, 0.5, text = "$(round(median(p_0.Tp[:,1])- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#12473D")
 
 density!(ax9, p_0.Tp[:,2] .- 273.15, label = "Tpm", color = ("#C1C6E8", 0.6), strokewidth = 3, strokecolor = "#C1C6E8")
-lines!(ax9, [median(p_0.Tp[:,2])- 273.15, median(p_0.Tp[:,2])- 273.15], [0, 0.9], linestyle = :dash, color = ("#9585B4", 0.9), linewidth = 5)
+lines!(ax9, [median(p_0.Tp[:,2])- 273.15, median(p_0.Tp[:,2])- 273.15], [0, 1.05], linestyle = :dash, color = ("#9585B4", 0.9), linewidth = 5)
 lines!(ax9, [20, median(p_0.Tp[:,2])- 273.15],[0.3, 0.3], linestyle = :dot, color = ("#9585B4", 0.9), linewidth = 3)
 text!(ax9, 20, 0.3, text = "$(round(median(p_0.Tp[:,2])- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#9585B4")
 
 density!(ax9, fitted_0_rho4.Th .- 273.15, label = "Tpα", color = ("#5676A5", 0.8), strokewidth = 3, strokecolor = "#5676A5")
-lines!(ax9, [median(fitted_0_rho4.Th)- 273.15, median(fitted_0_rho4.Th)- 273.15], [0, 0.9], linestyle = :dash, color = ("#0758AE", 0.9), linewidth = 5)
+lines!(ax9, [median(fitted_0_rho4.Th)- 273.15, median(fitted_0_rho4.Th)- 273.15], [0, 1.05], linestyle = :dash, color = ("#0758AE", 0.9), linewidth = 5)
 lines!(ax9, [20, median(fitted_0_rho4.Th)- 273.15],[0.7, 0.7], linestyle = :dot, color = ("#0758AE", 0.9), linewidth = 3)
 text!(ax9, 20, 0.7, text = "$(round(median(fitted_0_rho4.Th)- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#0758AE")
 

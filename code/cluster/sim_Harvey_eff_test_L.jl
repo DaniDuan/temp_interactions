@@ -2,13 +2,13 @@ include("./sim_frame.jl");
 
 N=100
 M=50
-L = fill(0.3, N)
+# L = fill(0.0, N)
 niche = fill(1.0, M, N)
 ### Temp params 
 num_temps = 31
 # ρ_t= [-0.3500 -0.3500]; # realistic covariance
-ρ_t= [0.0000 0.0000]; 
-# ρ_t= [-0.9999 -0.9999]; 
+# ρ_t= [0.0000 0.0000]; 
+ρ_t= [-0.9999 -0.9999]; 
 Tr=273.15+10; Ed=3.5 
 input_type = ["constant", "leaching", "chemostat", "self-renewing"]
 
@@ -26,6 +26,9 @@ cb = DiscreteCallback(condition, affect!)
 index_str = ENV["SLURM_ARRAY_TASK_ID"]
 # Convert the string to a numeric value (e.g., Integer)
 index = parse(Int, index_str)
+## Testing L
+l_v = 0.12 * ((index-1)%8)
+L = fill(l_v, N)
 
 # progress = Progress(num_temps; desc="Progress running:")
 rich = Float64[]; all_sur = Vector{Vector{Float64}}(); 
@@ -42,7 +45,7 @@ for i in range(0, stop = 30, length = 31)
 
     # N = 1; M= 1
     # Random.seed!(1)
-    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[3])
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[1])
 
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)
@@ -91,4 +94,4 @@ end
 
 # R"library(beepr); beep(sound = 4, expr = NULL)"
 
-@save "../data/20250817/p0_test_input/Eff_iters0_ρ4_$(index).jld2" rich all_sur all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_r all_u all_m all_Eu all_Em all_Tpu all_Tpm all_Rrela all_Crela all_R all_C 
+@save "../data/20250818/p-1_L/L$((index-1)%8)_$(index).jld2" rich all_sur all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_r all_u all_m all_Eu all_Em all_Tpu all_Tpm all_Rrela all_Crela all_R all_C 

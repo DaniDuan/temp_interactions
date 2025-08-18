@@ -8,6 +8,7 @@ M=50
 L = fill(0.0, N)
 ### Temp params 
 num_temps = 38
+temp = collect(Temp_rich .+273.15)
 Temp_rich = range(0, num_temps-1, length = num_temps)
 ρ_t= [0.0000 0.0000] #[-0.3500 -0.3500]; # realistic covariance
 # ρ_t= [-0.9999 -0.9999] #[-0.3500 -0.3500]; # realistic covariance
@@ -29,7 +30,7 @@ progress = Progress(num_temps; desc="Progress running:")
 for i in range(0, stop = num_temps-1, length = num_temps)
     T = 273.15 + i
     Random.seed!(6)
-    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[1])
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[4])
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)
     sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
@@ -48,15 +49,17 @@ for i in range(0, stop = num_temps-1, length = num_temps)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
 
-@save "../data/1com0_rho1.jld2" all_ℵii all_ℵij
+@save "../data/1com0_rho4.jld2" all_ℵii all_ℵij
 
 #######################################################
-@load "../data/1com0_rho4.jld2" all_ℵii all_ℵij
+# @load "../data/1com0_rho4.jld2" all_ℵii all_ℵij
 
 p_0 = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=273.15 + 25, ρ_t=[0.0000 0.0000], Tr=Tr, Ed=Ed)
 
 progress = Progress(N; desc="Progress running:")
-temp = collect(Temp_rich .+273.15)
+# temp = collect(Temp_rich .+273.15)[1:37]
+# num_temps = num_temps-1
+
 f1 = Figure(size = (1200, 1200));
 fitted = zeros(Float64, N, 6)
 

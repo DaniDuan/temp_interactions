@@ -91,9 +91,9 @@ fitted_0ij = filter_fitted(path_ij[1], p_0)
 fitted_0 = vcat(fitted_0ii[:,1:7], fitted_0ij)
 # fitted_0r = filter_fitted("../results/r_fitted0.csv", p_0)
 
-f = Figure(fontsize = 30, size = (1800, 1200));
+f = Figure(fontsize = 30, size = (1800, 700));
 #####  ρ = 0 ##### 
-Label(f[1,0], "Minimal Trade-off", fontsize = 50, rotation = pi/2)
+# Label(f[1,0], "Minimal Trade-off", fontsize = 50, rotation = pi/2)
 Box(f[1,1], linestyle = :solid, color = :white)
 for i in 1:25
     # Random.seed!(i*5)
@@ -171,3 +171,4 @@ Legend(f[1,3], [p4, p5, p6], tellheight = false, tellwidth = false, [ "Tpu", "Tp
 Label(f[1,3, TopLeft()], "(c)")
 
 f
+save("../results/TPCα_nol.pdf", f) 

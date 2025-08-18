@@ -99,7 +99,8 @@ function dxx!(dx, x, p, t)
         elseif p.input_type == "chemostat"
             dx[α + p.N] = p.ω[α] * (p.Kc[α] - x[α + p.N])
         elseif p.input_type == "self-renewing"
-            r_self = fill(1,p.M) .* exp.((-0.32./0.0000862) * ((1/p.T)-(1/283.15)))./(1 .+ (0.32./(3.5 .- 0.32)) .* exp.(3.5/0.0000862 * (1 ./(273.15+25) .- 1/p.T)))
+            E_r_self = 0.32; Tpk_r_self = 273.15+25; Ed = 3.5; Tr = 283.15; k = 0.0000862
+            r_self = fill(1,p.M) * exp((-E_r_self/k) * ((1/p.T)-(1/Tr)))/(1 + (E_r_self/(Ed - E_r_self)) * exp(Ed/k * (1 /Tpk_r_self - 1/p.T)))
             dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
         end 
 

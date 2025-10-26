@@ -21,9 +21,15 @@ function supply_MiCRM!(dx, x, p, t, α)
     elseif p.input_type == "chemostat"
         dx[α + p.N] = p.ω[α] * (p.Kc[α] - x[α + p.N])
     elseif p.input_type == "self-renewing"
-        E_r_self = 0.32; Tpk_r_self = 273.15+25; Ed = 3.5; Tr = 283.15; k = 0.0000862
-        r_self = fill(1,p.M) * exp((-E_r_self/k) * ((1/p.T)-(1/Tr)))/(1 + (E_r_self/(Ed - E_r_self)) * exp(Ed/k * (1 /Tpk_r_self - 1/p.T)))
-        dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
+        # E_r_self = 0.8; Tr = 283.15; k = 0.0000862
+
+        #### For self-renewing resource with temperature dependent growth 
+        # E_r_self = 0.8; Tpk_r_self = 273.15+25; Ed = 3.5; Tr = 283.15; k = 0.0000862
+        # r_self = fill(1,p.M) * exp((-E_r_self/k) * ((1/p.T)-(1/Tr)))/(1 + (E_r_self/(Ed - E_r_self)) * exp(Ed/k * (1 /Tpk_r_self - 1/p.T)))
+        # Kc_self = p.Kc * exp((0.8/k) * ((1/p.T)-(1/Tr)))
+        # dx[α + p.N] = (r_self[α] * x[α + p.N])/Kc_self[α] * (Kc_self[α] - x[α + p.N])
+        
+        dx[α + p.N] = (fill(1,p.M)[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
     end 
 end
 
@@ -99,11 +105,14 @@ function dxx!(dx, x, p, t)
         elseif p.input_type == "chemostat"
             dx[α + p.N] = p.ω[α] * (p.Kc[α] - x[α + p.N])
         elseif p.input_type == "self-renewing"
-            E_r_self = 0.32; Tpk_r_self = 273.15+25; Ed = 3.5; Tr = 283.15; k = 0.0000862
+            # E_r_self = 0.8; Tr = 283.15; k = 0.0000862
+            # r_self = fill(1,p.M) * exp((-E_r_self/k) * ((1/p.T)-(1/Tr)))
+            E_r_self = 0.8; Tpk_r_self = 273.15+25; Ed = 3.5; Tr = 283.15; k = 0.0000862
             r_self = fill(1,p.M) * exp((-E_r_self/k) * ((1/p.T)-(1/Tr)))/(1 + (E_r_self/(Ed - E_r_self)) * exp(Ed/k * (1 /Tpk_r_self - 1/p.T)))
-            dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
+            Kc_self = p.Kc * exp((0.8/k) * ((1/p.T)-(1/Tr)))
+            dx[α + p.N] = (r_self[α] * x[α + p.N])/Kc_self[α] * (Kc_self[α] - x[α + p.N])
+            # dx[α + p.N] = (r_self[α] * x[α + p.N])/p.Kc[α] * (p.Kc[α] - x[α + p.N])
         end 
-
 
         for i=1:p.N
             dx[α + p.N] += -p.u[i, α]*x[α+p.N]*x[i]

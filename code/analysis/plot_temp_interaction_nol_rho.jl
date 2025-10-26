@@ -4,7 +4,72 @@ num_temps = 31
 N=100; M=50
 Temp_rich = range(0, num_temps-1, length = num_temps)
 
-@load "../data/summary_temp_inter_rho.jld2" all_rich_collect_1 all_ii_collect_1 all_ij_collect_1 all_rich_collect_2 all_ii_collect_2 all_ij_collect_2 all_rich_collect_3 all_ii_collect_3 all_ij_collect_3 all_rich_collect_4 all_ii_collect_4 all_ij_collect_4
+# ############## collecting results ##############
+# path_1 = glob("Eff_iters0_ρ1_*", "../data/test_input_L03/")
+# progress = Progress(length(path_1)*num_temps; desc="Progress running:")
+# all_ii_collect_1 = Vector{Vector{Float64}}(); all_ij_collect_1 = Vector{Vector{Float64}}();
+# idx = collect(CartesianIndices(zeros(Float64, N, N)))
+# ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+# @time for j in 1: num_temps
+#     α_ij =  Float64[]; α_ii = Float64[];
+#     for i in 1:length(path_1)
+#         @load path_1[i]  all_ℵii all_ℵij #all_sur rich
+#         append!(α_ii, all_ℵii[j]); append!(α_ij, all_ℵij[j]); 
+#         next!(progress)
+#     end 
+#     push!(all_ii_collect_1, α_ii); push!(all_ij_collect_1, α_ij);
+# end 
+# R"library(beepr); beep(sound = 4, expr = NULL)"
+
+# path_2 = glob("Eff_iters0_ρ2_*", "../data/test_input_L03/")
+# progress = Progress(length(path_2)*num_temps; desc="Progress running:")
+# all_ii_collect_2 = Vector{Vector{Float64}}(); all_ij_collect_2 = Vector{Vector{Float64}}();
+# idx = collect(CartesianIndices(zeros(Float64, N, N)))
+# ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+# @time for j in 1: num_temps
+#     α_ij =  Float64[]; α_ii = Float64[];
+#     for i in 1:length(path_2)
+#         @load path_2[i]  all_ℵii all_ℵij #all_sur rich
+#         append!(α_ii, all_ℵii[j]); append!(α_ij, all_ℵij[j]); 
+#         next!(progress)
+#     end 
+#     push!(all_ii_collect_2, α_ii); push!(all_ij_collect_2, α_ij);
+# end 
+# R"library(beepr); beep(sound = 4, expr = NULL)"
+
+# path_3 = glob("Eff_iters0_ρ3_*", "../data/test_input_L03/")
+# progress = Progress(length(path_3)*num_temps; desc="Progress running:")
+# all_ii_collect_3 = Vector{Vector{Float64}}(); all_ij_collect_3 = Vector{Vector{Float64}}();
+# idx = collect(CartesianIndices(zeros(Float64, N, N)))
+# ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+# @time for j in 1: num_temps
+#     α_ij =  Float64[]; α_ii = Float64[];
+#     for i in 1:length(path_3)
+#         @load path_3[i]  all_ℵii all_ℵij #all_sur rich
+#         append!(α_ii, all_ℵii[j]); append!(α_ij, all_ℵij[j]); 
+#         next!(progress)
+#     end 
+#     push!(all_ii_collect_3, α_ii); push!(all_ij_collect_3, α_ij);
+# end 
+# R"library(beepr); beep(sound = 4, expr = NULL)"
+
+# path_4 = glob("Eff_iters0_ρ4_*", "../data/test_input_L03_new/")
+# progress = Progress(length(path_4)*num_temps; desc="Progress running:")
+# all_ii_collect_4 = Vector{Vector{Float64}}(); all_ij_collect_4 = Vector{Vector{Float64}}();
+# idx = collect(CartesianIndices(zeros(Float64, N, N)))
+# ind_off = [idx[i,j] for i in 1:N for j in 1:N if i != j]
+# @time for j in 1: num_temps
+#     α_ij =  Float64[]; α_ii = Float64[];
+#     for i in 1:length(path_4)
+#         @load path_4[i]  all_ℵii all_ℵij #all_sur rich
+#         append!(α_ii, all_ℵii[j]); append!(α_ij, all_ℵij[j]); 
+#         next!(progress)
+#     end 
+#     push!(all_ii_collect_4, α_ii); push!(all_ij_collect_4, α_ij);
+# end 
+# R"library(beepr); beep(sound = 4, expr = NULL)"
+
+@load "../data/summary_temp_inter_L0_rho.jld2" all_rich_collect_1 all_ii_collect_1 all_ij_collect_1 all_rich_collect_2 all_ii_collect_2 all_ij_collect_2 all_rich_collect_3 all_ii_collect_3 all_ij_collect_3 all_rich_collect_4 all_ii_collect_4 all_ij_collect_4
 ############## analysing ##############
 αii_ρ1 = [mean(all_ii_collect_1[t]) for t in 1: num_temps]
 αii_err_ρ1 = [std(all_ii_collect_1[t])/sqrt(length(all_ii_collect_1[t])) for t in 1: num_temps]
@@ -31,7 +96,6 @@ cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
 cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
 cs = vcat(cscheme[1:16], cscheme1[2:16])
 
-# f = Figure(fontsize = 30, size = (1800, 2600));
 f = Figure(fontsize = 30, size = (1800, 2000));
 
 Label(f[1,0], "Constant Resource", fontsize = 50, rotation = pi/2)
@@ -153,10 +217,7 @@ end
 Colorbar(f[3,4], colorrange = [0, 30], colormap = cs, label = "Temperature")
 Label(f[3,3, TopLeft()], "(i)")
 
-Label(f[0, :], "With Leakage (L = 0.3)", fontsize = 60,
-    tellwidth = false, font = :bold, justification = :center)
-
-    # f = Figure(fontsize = 30, size = (1800, 2000));
+# f = Figure(fontsize = 30, size = (1800, 2000));
 # Label(f[4,0], "Self-renewing Resource", fontsize = 50, rotation = pi/2)
 # ax10 = Axis(f[4,1],
 #     xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
@@ -182,88 +243,47 @@ Label(f[0, :], "With Leakage (L = 0.3)", fontsize = 60,
 # Colorbar(f[4,4], colorrange = [0, 25], colormap = cs[1:31], label = "Temperature")
 # Label(f[4,3, TopLeft()], "(l)")
 
-Label(f[0, :], "With Leakage (L = 0.3)", fontsize = 60, tellwidth = false, font = :bold, justification = :center)
+Label(f[0, :], "Without Leakage", fontsize = 60, tellwidth = false, font = :bold, justification = :center)
 
 f
-save("../results/distα_rho_v2.pdf", f) 
+
+save("../results/distα_nol_rho_v2.pdf", f) 
+
+# repeating_ii = [vcat([repeat([all_ii_collect[t][i]], 99) for i in 1:length(all_ii_collect[t])]...) for t in 1:num_temps]
+# cor_ij_ii = [cor(repeating_ii[t], all_ij_collect[t]) for t in 1:num_temps]
+# plot([mean(all_ij_collect[i]) for i in 1:num_temps])
+# plot(cor_ij_ii)
 
 
-#####################################################
+##########################################
 cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
 cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
 cs = vcat(cscheme[1:16], cscheme1[2:16])
 
 f = Figure(fontsize = 30, size = (1800, 700));
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α",
-    xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+Label(f[1,0], "     Without Leakage     ", fontsize = 50, rotation = pi/2)
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "α", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
 lines!(ax1, Temp_rich, αii_ρ1, color = ("#FA8328", 0.8), linewidth = 5, label = L"α_{ii}")
 band!(ax1, Temp_rich, αii_ρ1 .- αii_err_ρ1, αii_ρ1 .+ αii_err_ρ1, color = ("#FA8328", 0.2))
 lines!(ax1, Temp_rich, αij_ρ1, color = ("#015845", 0.8), linewidth = 5, label = L"α_{i≠j}")
-band!(ax1, Temp_rich, αij_ρ1 .- αij_err_ρ1, αij_ρ1 .+ αij_err_ρ1, color = ("#015845", 0.2))
+band!(ax1, Temp_rich,  αij_ρ1 .- αij_err_ρ1, αij_ρ1 .+ αij_err_ρ1, color = ("#015845", 0.2))
 axislegend(position = :lb)
 Label(f[1,1, TopLeft()], "(a)")
-ax2 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing),
-    xlabel = L"log(|α_{ii}|)", ylabel = "Density",
-    xlabelsize = 35, ylabelsize = 35)
-for i in 1:31
+ax2 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{ii}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+for i in 1: 31
     clean_data = log.(abs.(all_ii_collect_1[i]))
     clean_data = clean_data[isfinite.(clean_data)]
-    if !isempty(clean_data)
-        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
-        lines!(ax2, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
-        poly!(ax2, kd.x, kd.density, color = (cs[i], 0.2))
-    end
-end
+    density!(ax2, clean_data, color = (cs[i], 0.2), strokewidth = 3, strokecolor = (cs[i], 0.7))
+end 
 Label(f[1,2, TopLeft()], "(b)")
-ax3 = Axis(f[1,3], limits = ((-22.0, 3.0), nothing),
-    xlabel = L"log(|α_{i≠j}|)", ylabel = "Density",
-    xlabelsize = 35, ylabelsize = 35)
-for i in 1:31
+ax3 = Axis(f[1,3], limits = ((-22.0, 3.0), nothing), xlabel = L"log(|α_{i≠j}|)", ylabel = "Density", xlabelsize = 35, ylabelsize = 35)
+for i in 1: 31
     clean_data = log.(abs.(all_ij_collect_1[i]))
     clean_data = clean_data[isfinite.(clean_data)]
-    if !isempty(clean_data)
-        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
-        lines!(ax3, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
-        poly!(ax3, kd.x, kd.density, color = (cs[i], 0.2))
-    end
-end
-Label(f[1,3, TopLeft()], "(c)")
+    density!(ax3, clean_data, color = (cs[i], 0.3), strokewidth = 3, strokecolor = (cs[i], 0.5))
+end 
 Colorbar(f[1,4], colorrange = [0, 30], colormap = cs, label = "Temperature")
+Label(f[1,3, TopLeft()], "(c)")
+
 f
-save("../results/distα_rho_v3.pdf", f) 
-
-
-##############################################
-αij_ρ1_var = [mean([var(log.(abs.(all_ij_collect_1[t][(i-1)*9900+1:i*9900]))) for i in 1:999]) for t in 1: num_temps]
-αij_err_ρ1_var = [std([var(log.(abs.(all_ij_collect_1[t][(i-1)*9900+1:i*9900]))) for i in 1:999])/sqrt(999) for t in 1: num_temps]
-rich_ρ1 = [mean(all_rich_collect_1[t]) for t in 1: num_temps]
-rich_err_ρ1 = [std(all_rich_collect_1[t])/sqrt(length(all_rich_collect_1[t])) for t in 1: num_temps]
-
-f = Figure(fontsize = 35, size = (1000, 800));
-# Label(f[1,0], "With Leakage (L = 0.3)", fontsize = 50, rotation = pi/2)
-# Label(f[0,1], "Minimal Trade-off", fontsize = 50)
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Variation in α", xlabelsize = 45, ylabelsize = 45, ygridvisible = true, xgridvisible = true)
-ax2 = Axis(f[1,1], ylabel = "Richness", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 45, ylabelsize = 45, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
-hidespines!(ax2)
-# hidedecorations!(ax1, grid = false, ticks = true, ticklabels = true)
-lines!(ax1, Temp_rich, αij_ρ1_var, color = ("#FA8328",0.8), linewidth = 5, label = "")
-band!(ax1, Temp_rich, αij_ρ1_var .- αij_err_ρ1_var , αij_ρ1_var.+ αij_err_ρ1_var, color = ("#FA8328", 0.3))
-lines!(ax2, Temp_rich, rich_ρ1, color =( "#015845", 0.9), linewidth = 5, label = "")
-band!(ax2, Temp_rich, rich_ρ1 .- rich_err_ρ1 , rich_ρ1.+ rich_err_ρ1, color = ("#015845", 0.3))
-linkxaxes!(ax1,ax2)
-# lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
-# text!(ax1, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
-# text!(ax1, 0, 0.95, text = L"↓ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
-l1 = [LineElement(color = ("#FA8328", 0.8), linestyle = nothing, linewidth = 5)]
-l2 = [LineElement(color = ("#015845", 0.9), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"var(log(|α_{j≠i; j = 1,...,N}|))", "Richness"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
-Label(f[1,1, TopLeft()], "(a)")
-f
-save("../results/var_rich_rho.pdf", f) 
-
-
-
-
-
-
-############################
+save("../results/distα_nol_rho_v3.pdf", f) 

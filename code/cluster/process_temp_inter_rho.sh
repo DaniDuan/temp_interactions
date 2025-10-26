@@ -4,9 +4,9 @@
 #SBATCH --cpus-per-task=1   # Number of CPU cores per task
 #SBATCH --mem=1G            # Memory per node
 #SBATCH --partition=large_336
-#SBATCH --array=1-990
+#SBATCH --array=1
 
 echo "Julia is about to run"
-julia sim_Harvey_inter_nol.jl
+julia process_temp_interaction_rho_v2.jl
 echo "Julia has finished running"
 

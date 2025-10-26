@@ -4,14 +4,15 @@ using ColorSchemes
 
 N=100
 M=50
-# L = fill(0.3, N)
-L = fill(0.0, N)
+L = fill(0.3, N)
+# L = fill(0.0, N)
 ### Temp params 
 num_temps = 38
-temp = collect(Temp_rich .+273.15)
 Temp_rich = range(0, num_temps-1, length = num_temps)
-ρ_t= [0.0000 0.0000] #[-0.3500 -0.3500]; # realistic covariance
-# ρ_t= [-0.9999 -0.9999] #[-0.3500 -0.3500]; # realistic covariance
+temp = collect(Temp_rich .+273.15)
+# ρ_t= [0.0000 0.0000] #[-0.3500 -0.3500]; # realistic covariance
+# ρ_t= [-0.9999 -0.9999]
+ρ_t= [-0.5000 -0.5000]
 niche = fill(1.0, M, N)
 input_type = ["constant", "leaching", "chemostat", "self-renewing"]
 
@@ -49,6 +50,7 @@ for i in range(0, stop = num_temps-1, length = num_temps)
 end 
 R"library(beepr); beep(sound = 4, expr = NULL)"
 
+# @save "../data/1com0_rho4_L03_new_hightemp.jld2" all_ℵii all_ℵij
 @save "../data/1com0_rho4.jld2" all_ℵii all_ℵij
 
 #######################################################
@@ -101,5 +103,4 @@ fitted = DataFrame(fitted, df_names);
 CSV.write("../results/αii_fitted_rho4.csv", fitted, writeheader=false)
 
 f1
-
 save("../results/αii_fitted_rho4.pdf", f1) 

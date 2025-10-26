@@ -2,13 +2,14 @@ include("./sim_frame.jl");
 
 N=100
 M=50
-# L = fill(0.0, N)
+L = fill(0.3, N)
 niche = fill(1.0, M, N)
 ### Temp params 
 num_temps = 31
 # ρ_t= [-0.3500 -0.3500]; # realistic covariance
 # ρ_t= [0.0000 0.0000]; 
-ρ_t= [-0.9999 -0.9999]; 
+# ρ_t= [-0.9999 -0.9999]; 
+ρ_t= [-0.5000 -0.5000]; 
 Tr=273.15+10; Ed=3.5 
 input_type = ["constant", "leaching", "chemostat", "self-renewing"]
 
@@ -26,9 +27,6 @@ cb = DiscreteCallback(condition, affect!)
 index_str = ENV["SLURM_ARRAY_TASK_ID"]
 # Convert the string to a numeric value (e.g., Integer)
 index = parse(Int, index_str)
-## Testing L
-l_v = 0.12 * ((index-1)%8)
-L = fill(l_v, N)
 
 # progress = Progress(num_temps; desc="Progress running:")
 rich = Float64[]; all_sur = Vector{Vector{Float64}}(); 
@@ -38,8 +36,10 @@ all_u =  Vector{Vector{Float64}}(); all_m =  Vector{Vector{Float64}}();
 all_Eu =  Vector{Vector{Float64}}(); all_Em =  Vector{Vector{Float64}}(); 
 all_Tpu =  Vector{Vector{Float64}}(); all_Tpm =  Vector{Vector{Float64}}(); 
 all_Rrela = Vector{Vector{Float64}}(); all_Crela = Vector{Vector{Float64}}(); all_R =  Vector{Vector{Float64}}(); all_C = Vector{Vector{Float64}}();
+all_jac = Vector{Vector{Float64}}(); all_leading = ComplexF64[];
 
 for i in range(0, stop = 30, length = 31)
+    try
     T = 273.15 + i
     # next!(progress)
 
@@ -83,6 +83,12 @@ for i in range(0, stop = 30, length = 31)
     uℵij = [p_lv.ℵ[i, j] for i in 1:N for j in 1:N if j > i]
     lℵij = [p_lv.ℵ[j, i] for i in 1:N for j in 1:N if j > i]
 
+    p_lv = Eff_LV_params(p=p, sol=sol);
+    LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
+    jac_eigen = eigen(LV_jac).values
+    jac = vcat(LV_jac...)
+    leading = jac_eigen[argmax(real.(jac_eigen))]
+
     push!(rich, N_s); push!(all_sur, sur); 
     push!(all_ℵii, ℵii); push!(all_ℵij, ℵij); push!(all_ℵij_d, ℵij_d); push!(all_uℵij, uℵij); push!(all_lℵij, lℵij);
     push!(all_r, r); 
@@ -90,8 +96,19 @@ for i in range(0, stop = 30, length = 31)
     push!(all_Eu, Eu); push!(all_Em, Em); 
     push!(all_Tpu, Tpu); push!(all_Tpm, Tpm); 
     push!(all_Rrela, R_rela); push!(all_Crela, C_rela); push!(all_R, R_t); push!(all_C, C_t);
+    push!(all_jac, jac); push!(all_leading, leading); 
+    catch e 
+    push!(rich, NaN); push!(all_sur, NaN); 
+    push!(all_ℵii, NaN); push!(all_ℵij, NaN); push!(all_ℵij_d, NaN); push!(all_uℵij, NaN); push!(all_lℵij, NaN);
+    push!(all_r, NaN); 
+    push!(all_u, NaN); push!(all_m, NaN); 
+    push!(all_Eu, NaN); push!(all_Em, NaN); 
+    push!(all_Tpu, NaN); push!(all_Tpm, NaN); 
+    push!(all_Rrela, NaN); push!(all_Crela, NaN); push!(all_R, NaN); push!(all_C, NaN);
+    push!(all_jac, NaN); push!(all_leading, NaN); 
+    end 
 end 
 
 # R"library(beepr); beep(sound = 4, expr = NULL)"
 
-@save "../data/20250818/p-1_L/L$((index-1)%8)_$(index).jld2" rich all_sur all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_r all_u all_m all_Eu all_Em all_Tpu all_Tpm all_Rrela all_Crela all_R all_C 
+@save "../data/20250917/p05_test_input/Eff_iters0_ρ1_$(index).jld2" rich all_sur all_ℵii all_ℵij all_ℵij_d all_uℵij all_lℵij all_r all_u all_m all_Eu all_Em all_Tpu all_Tpm all_Rrela all_Crela all_R all_C all_jac all_leading

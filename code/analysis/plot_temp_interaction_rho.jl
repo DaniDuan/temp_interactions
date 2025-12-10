@@ -233,6 +233,53 @@ f
 save("../results/distα_rho_v3.pdf", f) 
 
 
+#####################################################
+cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
+cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
+cs = vcat(cscheme[1:16], cscheme1[2:16])
+
+f = Figure(fontsize = 30, size = (1800, 700));
+ax2 = Axis(f[1,1], limits = ((-22.0, 3.0), nothing),
+    xlabel = L"log(|α_{ii}|)", ylabel = "Density",
+    xlabelsize = 35, ylabelsize = 35)
+for i in 1:31
+    clean_data = log.(abs.(all_ii_collect_1[i]))
+    clean_data = clean_data[isfinite.(clean_data)]
+    if !isempty(clean_data)
+        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
+        lines!(ax2, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
+        poly!(ax2, kd.x, kd.density, color = (cs[i], 0.2))
+    end
+end
+Label(f[1,1, TopLeft()], "(a)")
+ax3 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing),
+    xlabel = L"log(|α_{j≠i}|)", ylabel = "Density",
+    xlabelsize = 35, ylabelsize = 35)
+for i in 1:31
+    clean_data = log.(abs.(all_ij_collect_1[i]))
+    clean_data = clean_data[isfinite.(clean_data)]
+    if !isempty(clean_data)
+        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
+        lines!(ax3, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
+        poly!(ax3, kd.x, kd.density, color = (cs[i], 0.2))
+    end
+end
+Label(f[1,2, TopLeft()], "(b)")
+Colorbar(f[1,3], colorrange = [0, 30], colormap = cs, label = "Temperature")
+
+ax1 = Axis(f[1,4], xlabel = "Temperature (°C)", ylabel = L"\text{Mean Interaction Strength (} \bar{\alpha} \pm \text{SE} \text{)}",
+    xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+lines!(ax1, Temp_rich, αii_ρ1, color = ("#FA8328", 0.8), linewidth = 5, label = L"\bar{\alpha}_{ii}")
+band!(ax1, Temp_rich, αii_ρ1 .- αii_err_ρ1, αii_ρ1 .+ αii_err_ρ1, color = ("#FA8328", 0.2))
+lines!(ax1, Temp_rich, αij_ρ1, color = ("#015845", 0.8), linewidth = 5, label = L"\bar{\alpha}_{j≠i}")
+band!(ax1, Temp_rich, αij_ρ1 .- αij_err_ρ1, αij_ρ1 .+ αij_err_ρ1, color = ("#015845", 0.2))
+axislegend(position = :rt)
+Label(f[1,4, TopLeft()], "(c)")
+
+f
+save("../results/distα_rho_v4.svg", f) 
+
+
 ##############################################
 αij_ρ1_var = [mean([var(log.(abs.(all_ij_collect_1[t][(i-1)*9900+1:i*9900]))) for i in 1:999]) for t in 1: num_temps]
 αij_err_ρ1_var = [std([var(log.(abs.(all_ij_collect_1[t][(i-1)*9900+1:i*9900]))) for i in 1:999])/sqrt(999) for t in 1: num_temps]
@@ -261,8 +308,29 @@ Label(f[1,1, TopLeft()], "(a)")
 f
 save("../results/var_rich_rho.pdf", f) 
 
+f = Figure(fontsize = 35, size = (1000, 800));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Richness", xlabelsize = 45, ylabelsize = 45, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "Variation in α", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 45, ylabelsize = 45, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+lines!(ax1, Temp_rich, rich_ρ1, color =( "#015845", 0.9), linewidth = 5, label = "")
+band!(ax1, Temp_rich, rich_ρ1 .- rich_err_ρ1 , rich_ρ1.+ rich_err_ρ1, color = ("#015845", 0.3))
+lines!(ax2, Temp_rich, αij_ρ1_var, color = ("#FA8328",0.8), linewidth = 5, label = "")
+band!(ax2, Temp_rich, αij_ρ1_var .- αij_err_ρ1_var , αij_ρ1_var.+ αij_err_ρ1_var, color = ("#FA8328", 0.3))
+linkxaxes!(ax1,ax2)
+l1 = [LineElement(color = ("#FA8328", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#015845", 0.9), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"var(log(|α_{j≠i; j = 1,...,N}|))", "Richness"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
+Label(f[1,1, TopLeft()], "(a)")
+f
+save("../results/var_rich_rho_v1.pdf", f) 
 
 
+f = Figure(fontsize = 75, size = (1000, 1000));
+ax1 = Axis(f[1,1], xlabel = "T (°C)", ylabel = L"Var(log(α_{j≠i}))", xlabelsize = 100, ylabelsize = 100, ygridvisible = false, xgridvisible = false)
+lines!(ax1, Temp_rich, αij_ρ1_var, color = ("#FA8328",0.8), linewidth = 8, label = "")
+band!(ax1, Temp_rich, αij_ρ1_var .- αij_err_ρ1_var , αij_ρ1_var.+ αij_err_ρ1_var, color = ("#FA8328", 0.3))
+f
+save("../results/var_rho.svg", f) 
 
 
 

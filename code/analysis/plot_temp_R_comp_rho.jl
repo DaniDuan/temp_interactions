@@ -225,7 +225,7 @@ f
 f = Figure(fontsize = 35, size = (1000, 800));
 # Label(f[1,0], "With Leakage (L = 0.3)", fontsize = 50, rotation = pi/2)
 # Label(f[0,1], "Minimal Trade-off", fontsize = 50)
-ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Effective Resource Competition\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 45, ylabelsize = 45, ygridvisible = true, xgridvisible = true)
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Inter-intraspecific Interaction Ratio\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 45, ylabelsize = 45, ygridvisible = true, xgridvisible = true)
 ax2 = Axis(f[1,1], ylabel = "p(Stability)", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 45, ylabelsize = 45, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
 hidespines!(ax2)
 # hidedecorations!(ax1, grid = false, ticks = true, ticklabels = true)
@@ -233,12 +233,39 @@ lines!(ax1, Temp_rich, αij_d_1, color = ("#F8BA17",0.8), linewidth = 5, label =
 band!(ax1, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#F8BA17", 0.3))
 lines!(ax2, Temp_rich, sta_1, color =( "#376298", 0.9), linewidth = 5, label = "")
 linkxaxes!(ax1,ax2)
-# lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
-# text!(ax1, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
-# text!(ax1, 0, 0.95, text = L"↓ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
+lines!(ax1, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+text!(ax1, 0, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:left, :center),fontsize = 30)
+text!(ax1, 0, 0.95, text = L"↓ α_{j≠i} < α_{ii}", align = (:left, :center),fontsize = 30)
 l1 = [LineElement(color = ("#F8BA17", 0.8), linestyle = nothing, linewidth = 5)]
 l2 = [LineElement(color = ("#376298", 0.9), linestyle = nothing, linewidth = 5)]
 Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"α_{j≠i; j = 1,...,N}/α_{ii} ", "p(Stability)"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,1, TopLeft()], "(b)")
 f
 save("../results/ratio_sta_rho_v2.pdf", f) 
+
+
+f = Figure(fontsize = 35, size = (1000, 800));
+ax1 = Axis(f[1,1], xlabel = "Temperature (°C)", ylabel = "Probability of Stability", xlabelsize = 45, ylabelsize = 45, ygridvisible = true, xgridvisible = true)
+ax2 = Axis(f[1,1], ylabel = "Inter-intraspecific Interaction Ratio\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 45, ylabelsize = 45, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2)
+lines!(ax1, Temp_rich, sta_1, color =( "#376298", 0.9), linewidth = 5, label = "")
+lines!(ax2, Temp_rich, αij_d_1, color = ("#F8BA17",0.8), linewidth = 5, label = "")
+band!(ax2, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#F8BA17", 0.3))
+linkxaxes!(ax1,ax2)
+lines!(ax2, [0, 30], [1, 1], linestyle = :dash, color = ("#4F363E", 0.9), linewidth = 2)
+text!(ax2, 24.5, 1.05, text = L"↑ α_{j≠i} > α_{ii}", align = (:right, :center),fontsize = 30)
+text!(ax2, 24.5, 0.95, text = L"↓ α_{j≠i} < α_{ii}", align = (:right, :center),fontsize = 30)
+l1 = [LineElement(color = ("#F8BA17", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#376298", 0.9), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"α_{j≠i; j = 1,...,N}/α_{ii} ", "p(Stability)"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
+Label(f[1,1, TopLeft()], "(b)")
+f
+save("../results/ratio_sta_rho_v3.pdf", f) 
+
+
+f = Figure(fontsize = 75, size = (1000, 1000));
+ax1 = Axis(f[1,1], xlabel = "T (°C)", ylabel = L"α_{j≠i}/α_{ii}", xlabelsize = 100, ylabelsize = 100, ygridvisible = false, xgridvisible = false)
+lines!(ax1, Temp_rich, αij_d_1, color = ("#F8BA17",0.8), linewidth = 8, label = "")
+band!(ax1, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#F8BA17", 0.3))
+f
+save("../results/ratio_rho.svg", f) 

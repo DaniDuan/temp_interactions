@@ -273,3 +273,26 @@ condition(du, t, integrator) = norm(integrator(t, Val{1})[N:N+M]) <= eps()
 affect!(integrator) = terminate!(integrator)
 cb = DiscreteCallback(condition, affect!)
 
+####################################################
+num_temps = 31
+Temp_rich = range(0, num_temps-1, length = num_temps)
+
+path = glob("Eff_iters*", "../data/Eff_p-1_new/")
+
+progress = Progress((length(path)-1)*num_temps; desc="Progress running:")
+
+all_R_collect = Vector{Vector{Float64}}(); all_C_collect = Vector{Vector{Float64}}();
+@time for j in 1: num_temps
+    all_R_H =  Float64[]; all_C_H = Float64[]
+
+    for i in 1:length(path)
+        # if i != 110 # need to remove this in p-1_new
+        # if i != 485 && i != 211 && i != 678 # need to remove this in p0_new
+            @load path[i] all_R all_C
+            append!(all_R_H, all_R[j]); append!(all_C_H, all_C[j])
+        # end 
+        next!(progress)
+    end 
+
+    push!(all_R_collect, all_R_H); push!(all_C_collect, all_C_H);
+end 

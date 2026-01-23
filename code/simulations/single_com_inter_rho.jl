@@ -31,7 +31,7 @@ progress = Progress(num_temps; desc="Progress running:")
 for i in range(0, stop = num_temps-1, length = num_temps)
     T = 273.15 + i
     Random.seed!(6)
-    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[4])
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T, ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[1])
     ## run simulation
     prob = ODEProblem(dxx!, x0, tspan, p)
     sol =solve(prob, AutoVern7(Rodas5()), save_everystep = false, callback=cb)
@@ -51,12 +51,11 @@ end
 R"library(beepr); beep(sound = 4, expr = NULL)"
 
 # @save "../data/1com0_rho4_L03_new_hightemp.jld2" all_ℵii all_ℵij
-@save "../data/1com0_rho4.jld2" all_ℵii all_ℵij
+# @save "../data/1com0_rho1.jld2" all_ℵii all_ℵij
+@save "../data/1com0_rho1_Arr.jld2" all_ℵii all_ℵij
 
 #######################################################
 # @load "../data/1com0_rho4.jld2" all_ℵii all_ℵij
-
-p_0 = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=273.15 + 25, ρ_t=[0.0000 0.0000], Tr=Tr, Ed=Ed)
 
 progress = Progress(N; desc="Progress running:")
 # temp = collect(Temp_rich .+273.15)[1:37]
@@ -100,7 +99,9 @@ R"library(beepr); beep(sound = 4, expr = NULL)"
 
 df_names = ["B0","E","Th","Ed","AIC","r2"]
 fitted = DataFrame(fitted, df_names);
-CSV.write("../results/αii_fitted_rho4.csv", fitted, writeheader=false)
+# CSV.write("../results/αii_fitted_rho1.csv", fitted, writeheader=false)
+CSV.write("../results/αii_fitted_rho1_Arr.csv", fitted, writeheader=false)
 
 f1
-save("../results/αii_fitted_rho4.pdf", f1) 
+# save("../results/αii_fitted_rho1.pdf", f1) 
+save("../results/αii_fitted_rho1_Arr.pdf", f1) 

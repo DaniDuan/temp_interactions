@@ -277,7 +277,63 @@ axislegend(position = :rt)
 Label(f[1,4, TopLeft()], "(c)")
 
 f
-save("../results/distα_rho_v4.svg", f) 
+# save("../results/distα_rho_v4.svg", f) 
+
+
+##################################################################
+@load "../data/summary_stability_rho.jld2" all_leading_collect_1 all_leading_collect_2 all_leading_collect_3 all_leading_collect_4 dℵij_collect_1 dℵij_collect_2 dℵij_collect_3 dℵij_collect_4
+αij_d_1 = [mean(filter(x -> isfinite(x) && -100 <= x <= 100, dℵij_collect_1[t])) for t in 1:num_temps]
+αij_d_err_1 = [std(filter(x -> isfinite(x) && -100 <= x <= 100, dℵij_collect_1[t]))/sqrt(length(filter(x -> isfinite(x) && -100 <= x <= 100, dℵij_collect_1[t]))) for t in 1: num_temps]
+
+cscheme = ColorScheme(range(colorant"#376298",colorant"#ECDFCB", length = 16))
+cscheme1 = ColorScheme(range(colorant"#ECDFCB",colorant"#9A2B1A", length = 16))
+cs = vcat(cscheme[1:16], cscheme1[2:16])
+
+f = Figure(fontsize = 30, size = (1800, 1800));
+ax2 = Axis(f[1,1], limits = ((-22.0, 3.0), nothing),
+    xlabel = L"log(|α_{ii}|)", ylabel = "Density",
+    xlabelsize = 35, ylabelsize = 35)
+for i in 1:31
+    clean_data = log.(abs.(all_ii_collect_1[i]))
+    clean_data = clean_data[isfinite.(clean_data)]
+    if !isempty(clean_data)
+        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
+        lines!(ax2, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
+        poly!(ax2, kd.x, kd.density, color = (cs[i], 0.2))
+    end
+end
+Label(f[1,1, TopLeft()], "(a)")
+ax3 = Axis(f[1,2], limits = ((-22.0, 3.0), nothing),
+    xlabel = L"log(|α_{j≠i}|)", ylabel = "Density",
+    xlabelsize = 35, ylabelsize = 35)
+for i in 1:31
+    clean_data = log.(abs.(all_ij_collect_1[i]))
+    clean_data = clean_data[isfinite.(clean_data)]
+    if !isempty(clean_data)
+        kd = kde(clean_data; npoints = 300, boundary = (-22.0, 3.0))
+        lines!(ax3, kd.x, kd.density, color = (cs[i], 0.6), linewidth = 3)
+        poly!(ax3, kd.x, kd.density, color = (cs[i], 0.2))
+    end
+end
+# Label(f[1,2, TopLeft()], "(b)")
+Colorbar(f[1,3], colorrange = [0, 30], colormap = cs, label = "Temperature")
+
+ax1 = Axis(f[2,1], xlabel = "Temperature (°C)", ylabel = L"\text{Mean Interaction Strength (} \bar{\alpha} \pm \text{SE} \text{)}",
+    xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+lines!(ax1, Temp_rich, αii_ρ1, color = ("#FA8328", 0.8), linewidth = 5, label = L"\bar{\alpha}_{ii}")
+band!(ax1, Temp_rich, αii_ρ1 .- αii_err_ρ1, αii_ρ1 .+ αii_err_ρ1, color = ("#FA8328", 0.2))
+lines!(ax1, Temp_rich, αij_ρ1, color = ("#015845", 0.8), linewidth = 5, label = L"\bar{\alpha}_{j≠i}")
+band!(ax1, Temp_rich, αij_ρ1 .- αij_err_ρ1, αij_ρ1 .+ αij_err_ρ1, color = ("#015845", 0.2))
+axislegend(position = :rt)
+Label(f[2,1, TopLeft()], "(b)")
+
+ax4 = Axis(f[2,2], xlabel = "Temperature (°C)", ylabel = "Inter-intraspecific Interaction Ratio\n(αⱼᵢ/αᵢᵢ for j = 1,...,N)", xlabelsize = 35, ylabelsize = 35, ygridvisible = true, xgridvisible = true)
+lines!(ax4, Temp_rich, αij_d_1, color = ("#F8BA17",0.8), linewidth = 5, label = L"\overline{α_{j≠i}/α_{ii}} ")
+band!(ax4, Temp_rich, αij_d_1 .- αij_d_err_1 , αij_d_1.+ αij_d_err_1, color = ("#F8BA17", 0.3))
+axislegend(position = :lt)
+Label(f[2,2, TopLeft()], "(c)")
+f
+save("../results/distα_rho_v6.svg", f) 
 
 
 ##############################################
@@ -319,10 +375,10 @@ band!(ax2, Temp_rich, αij_ρ1_var .- αij_err_ρ1_var , αij_ρ1_var.+ αij_err
 linkxaxes!(ax1,ax2)
 l1 = [LineElement(color = ("#FA8328", 0.8), linestyle = nothing, linewidth = 5)]
 l2 = [LineElement(color = ("#015845", 0.9), linestyle = nothing, linewidth = 5)]
-Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"var(log(|α_{j≠i; j = 1,...,N}|))", "Richness"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ L"var(log(|α_{j≠i}|))", "Richness"], halign = :left, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,1, TopLeft()], "(a)")
 f
-save("../results/var_rich_rho_v1.pdf", f) 
+save("../results/var_rich_rho_v2.pdf", f) 
 
 
 f = Figure(fontsize = 75, size = (1000, 1000));
@@ -333,5 +389,55 @@ f
 save("../results/var_rho.svg", f) 
 
 
+f = Figure(fontsize = 75, size = (1000, 1000));
+ax1 = Axis(f[1,1], xlabel = "T (°C)", ylabel = L"Var(log(α_{j≠i}))", xlabelsize = 100, ylabelsize = 100, ygridvisible = false, xgridvisible = false)
+ax2 = Axis(f[1,1], ylabel = L"Var(log(u))", yaxisposition = :right, yticklabelalign = (:left, :center), xlabelsize = 100, ylabelsize = 100, ygridvisible = false, xgridvisible = false, xticklabelsvisible = false, xlabelvisible = false)
+hidespines!(ax2); linkxaxes!(ax1,ax2)
+lines!(ax1, Temp_rich, αij_ρ1_var, color = ("#FA8328",0.8), linewidth = 8, label = "")
+band!(ax1, Temp_rich, αij_ρ1_var .- αij_err_ρ1_var , αij_ρ1_var.+ αij_err_ρ1_var, color = ("#FA8328", 0.3))
+lines!(ax2, Temp_rich,var_u, color = ("#0758AE", 0.8), linewidth = 8)  # Original code at the end of sim_um.jl
+l1 = [LineElement(color = ("#FA8328", 0.8), linestyle = nothing, linewidth = 5)]
+l2 = [LineElement(color = ("#0758AE", 0.8), linestyle = nothing, linewidth = 5)]
+Legend(f[1,1], [l1, l2], tellheight = false, tellwidth = false, [ "α", "u"], halign = :center, valign = :top, framevisible = false) # "ƒc-ƒo"
+f
+save("../results/var_rho_withu.svg", f) 
+
 
 ############################
+function plot_matrix_with_dots()
+    fig = Figure(resolution = (800, 800))
+    ax = Axis(fig[1, 1], aspect = DataAspect())
+    hidedecorations!(ax); hidespines!(ax)
+    N = 3  # This represents the conceptual size
+    positions = [
+        (1, 1),      # α_11
+        (1, N),      # α_1N
+        (N, 1),      # α_N1
+        (N, N)       # α_NN
+    ]
+    bracket_width = 0.15
+    lines!(ax, [0.5-bracket_width, 0.5-bracket_width, 0.5], [0.5, N+0.5, N+0.5], 
+           color = :black, linewidth = 2)
+    lines!(ax, [N+0.5+bracket_width, N+0.5+bracket_width, N+0.5], [0.5, N+0.5, N+0.5], 
+           color = :black, linewidth = 2)
+    text!(ax, 1, 1, text = L"\alpha_{11}", fontsize = 100, align = (:center, :center))
+    text!(ax, N, 1, text = L"\alpha_{1N}", fontsize = 100, align = (:center, :center))
+    text!(ax, 1, N, text = L"\alpha_{N1}", fontsize = 100, align = (:center, :center))
+    text!(ax, N, N, text = L"\alpha_{NN}", fontsize = 100, align = (:center, :center))
+    for i in 2:N-1
+        text!(ax, i, 1, text = "⋯", fontsize = 100, align = (:center, :center))
+    end
+    for j in 2:N-1
+        text!(ax, 1, j, text = "⋮", fontsize = 100, align = (:center, :center))
+    end
+    text!(ax, N÷2+1, N÷2+1, text = "⋱", fontsize = 100, align = (:center, :center))
+    xlims!(ax, 0.3, N+0.7); ylims!(ax, 0.3, N+0.7)
+    ax.yreversed = true
+    
+    fig
+end
+
+plot_matrix_with_dots()
+fig = plot_matrix_with_dots()
+
+save("../results/plot_matrix_with_dots.svg", fig) 

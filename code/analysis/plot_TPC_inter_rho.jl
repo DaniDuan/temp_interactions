@@ -525,7 +525,7 @@ lines!(ax2, [median(fitted_0_rho1.E), median(fitted_0_rho1.E)], [0, 1.6], linest
 lines!(ax2, [median(fitted_0_rho1.E), 3.5],[0.6, 0.6], linestyle = :dot, color = ("#601210", 0.9), linewidth = 3)
 text!(ax2, 3.5, 0.6, text = "$(round(median(fitted_0_rho1.E) ,digits = 2)) ev", align = (:left, :center), fontsize = 20, color = "#601210")
 
-Legend(f[1,2], [p1, p2, p3], tellheight = false, tellwidth = false, [ "Eu", "Em", "Eα"], halign = :right, valign = :top, framevisible = false) # "ƒc-ƒo"
+Legend(f[1,2], [p1, p2, p3], tellheight = false, tellwidth = false, [ L"E_u", L"E_m", L"E_α"], halign = :right, valign = :top, framevisible = false) # "ƒc-ƒo"
 
 Label(f[1,2, TopLeft()], "(b)")
 
@@ -545,10 +545,10 @@ lines!(ax3, [median(fitted_0_rho1.Th)- 273.15, median(fitted_0_rho1.Th)- 273.15]
 lines!(ax3, [20, median(fitted_0_rho1.Th)- 273.15],[0.095, 0.095], linestyle = :dot, color = ("#0758AE", 0.9), linewidth = 3)
 text!(ax3, 20, 0.095, text = "$(round(median(fitted_0_rho1.Th)- 273.15 ,digits = 2)) °C", align = (:right, :center), fontsize = 20, color = "#0758AE")
 
-Legend(f[1,3], [p4, p5, p6], tellheight = false, tellwidth = false, [ "Tpu", "Tpm", "Tpα"], halign = :right, valign = :top, framevisible = false) # "ƒc-ƒo"
+Legend(f[1,3], [p4, p5, p6], tellheight = false, tellwidth = false, [ L"T_{pk,u}", L"T_{pk,m}", L"T_{pk,α}"], halign = :right, valign = :top, framevisible = false) # "ƒc-ƒo"
 Label(f[1,3, TopLeft()], "(c)")
 
 f
 
-save("../results/TPCα_rho_v3.pdf", f) 
+save("../results/TPCα_rho_v4.pdf", f) 
 

@@ -153,3 +153,51 @@ axislegend(position = :rt)
 Label(f[1,1, TopLeft()], "(b)")
 f
 save("../result/Bm_Ea_em.png", f) 
+
+#####################################################
+N=100
+M=50
+L = fill(0.3, N)
+# L = fill(0.0, N)
+### Temp params 
+num_temps = 31
+Temp_rich = range(0, num_temps-1, length = num_temps)
+temp = collect(Temp_rich .+273.15)
+# ρ_t= [0.0000 0.0000] #[-0.3500 -0.3500]; # realistic covariance
+# ρ_t= [-0.9999 -0.9999]
+ρ_t= [-0.5000 -0.5000]
+niche = fill(1.0, M, N)
+input_type = ["constant", "leaching", "chemostat", "self-renewing"]
+
+Tr=273.15+10; Ed=3.5 
+
+T = Temp_rich .+ 273.15
+
+
+
+all_u = Float64[]; all_m = Float64[]
+for t in 1: num_temps
+    Random.seed!(6)
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=L, T=T[t], ρ_t=ρ_t, Tr=Tr, Ed=Ed, niche = niche, input_type = input_type[1])
+    u_sum = sum(p.u, dims = 2)
+    append!(all_u, u_sum); append!(all_m, p.m)
+end 
+u_by_temp = reshape(all_u, N, num_temps)
+m_by_temp = reshape(all_m, N, num_temps)
+
+f = Figure(fontsize = 50, size = (1200, 900));
+# ax1 = Axis(f[1,1], ylabel = "log(u)", title = "Minimal Trade-off", ylabelsize = 70, ygridvisible = true, xgridvisible = true, xticklabelsvisible = false)
+ax1 = Axis(f[1,1], ylabel = "log(u)", ylabelsize = 70, ygridvisible = true, xgridvisible = true, xticklabelsvisible = false)
+ax2 = Axis(f[2,1], xlabel = "T (ᵒC)", ylabel = "log(m)", xlabelsize = 70, ylabelsize = 70, ygridvisible = true, xgridvisible = true)
+for i in 1:N
+    lines!(ax1,Temp_rich, log.(u_by_temp[i, :]), color = "#FA8328", linewidth = 3)
+    lines!(ax2,Temp_rich, log.(m_by_temp[i, :]), color = "#015845", linewidth = 3)
+    # save("../result/u_$(i).svg", f) 
+end 
+f
+
+var_u = [var(log.(u_by_temp[:, i])) for i in 1:num_temps]
+f = Figure(fontsize = 50, size = (1200, 900));
+ax1 = Axis(f[1,1], ylabel = "var(log(u))", ylabelsize = 70, ygridvisible = true, xgridvisible = true, xticklabelsvisible = false)
+lines!(ax1, Temp_rich,var_u, color = "#FA8328", linewidth = 3)
+f
